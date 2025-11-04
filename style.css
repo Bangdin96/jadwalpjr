@@ -2,6 +2,8 @@ body {
     box-sizing: border-box;
     font-family: 'Inter', sans-serif;
 }
+/* .font-mono dan .font-serif dihapus */
+
 .fade-in { animation: fadeIn 0.3s ease-in; }
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(10px); }
@@ -14,8 +16,12 @@ body {
     margin: 0 auto 12px;
     border-radius: 50%;
     overflow: hidden;
-    border: 3px solid #e5e7eb;
-    background: #f3f4f6;
+    border: 3px solid #e5e7eb; /* default light */
+    background: #f3f4f6; /* default light */
+}
+.dark .photo-container {
+    border-color: #374151; /* dark:border-gray-700 */
+    background-color: #374151; /* dark:bg-gray-700 */
 }
 .photo-container img {
     width: 100%;
@@ -37,28 +43,65 @@ body {
     font-size: 20px;
     font-weight: bold;
 }
+.dark .photo-fallback {
+    background-color: #4b5563; /* dark:bg-gray-600 */
+    color: #d1d5db; /* dark:text-gray-300 */
+}
 .schedule-card {
   cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
-/* === GAYA BARU UNTUK TAG APLIKASI === */
 .app-tag {
     display: inline-block;
-    background-color: #e5e7eb; /* bg-gray-200 */
-    color: #374151; /* text-gray-700 */
-    border-radius: 9999px; /* rounded-full */
+    background-color: #e0e7ff; /* bg-indigo-100 */
+    color: #3730a3; /* text-indigo-800 */
+    border-radius: 9999px;
     padding: 2px 10px;
     font-size: 12px;
     font-weight: 500;
     margin: 2px;
 }
-/* Style tag untuk dark mode */
 .dark .app-tag {
-    background-color: #374151; /* dark:bg-gray-700 */
-    color: #d1d5db; /* dark:text-gray-300 */
+    background-color: #3730a3; /* dark:bg-indigo-800 */
+    color: #e0e7ff; /* dark:text-indigo-100 */
 }
-/* === AKHIR GAYA BARU === */
+
+/* === PERUBAHAN: font-family dihapus === */
+.search-result-group {
+    /* font-family: 'Merriweather', serif; Dihapus */
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: #9f1239; /* text-red-700 */
+    border-bottom: 2px solid #e5e7eb; /* border-gray-200 */
+    padding-bottom: 8px;
+    margin-top: 16px;
+    margin-bottom: 12px;
+}
+.dark .search-result-group {
+    color: #fda4af; /* dark:text-red-300 */
+    border-bottom-color: #374151; /* dark:border-gray-700 */
+}
+.search-result-group:first-child {
+    margin-top: 0;
+}
+.search-result-item {
+    padding: 16px;
+    background-color: #f9fafb; /* light:bg-gray-50 */
+    border-radius: 0.5rem;
+    border: 1px solid #e5e7eb; /* light:border-gray-200 */
+    transition: all 0.2s ease;
+}
+.dark .search-result-item {
+    background-color: #1f2937; /* dark:bg-gray-800 */
+    border-color: #374151; /* dark:border-gray-700 */
+}
+.search-result-item:hover {
+    border-color: #b91c1c; /* hover:border-red-700 */
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+/* === AKHIR PERUBAHAN === */
 
 
 /* Mobile optimizations */

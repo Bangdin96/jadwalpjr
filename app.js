@@ -4,7 +4,7 @@ let staffDetails;
 let holidays;
 let specialSchedules;
 let courseSchedule;
-let schedulesByDayAndRoom = {}; // Untuk data yang sudah dioptimasi
+let schedulesByDayAndRoom = {};
 
 let currentViewDate = new Date();
 
@@ -46,24 +46,21 @@ function getLocalDateString(date) {
     return `${year}-${month}-${day}`;
 }
 
-// === FUNGSI BARU UNTUK MEMBUAT TAG APLIKASI ===
 function createTagHTML(appString) {
     if (!appString || appString.trim() === '') {
         return '<p class="text-sm text-gray-500 dark:text-gray-400">Tidak ada info aplikasi.</p>';
     }
-    // Pisahkan string berdasarkan koma, lalu rapikan spasi di awal/akhir
     const apps = appString.split(',').map(app => app.trim());
 
     let html = '<div class="flex flex-wrap gap-1 mt-2">';
     apps.forEach(app => {
-        if (app) { // Pastikan bukan string kosong
+        if (app) {
             html += `<span class="app-tag">${app}</span>`;
         }
     });
     html += '</div>';
     return html;
 }
-// === AKHIR FUNGSI BARU ===
 
 
 // --- FUNGSI LOGIKA TANGGAL ---
@@ -136,14 +133,17 @@ function getPJRForDate(labName, date) {
 }
 
 function createScheduleCard(labName, pjrName, isToday = false, date) {
-    const cardClass = isToday ? 'bg-green-50 border-green-200 shadow-md dark:bg-green-900 dark:border-green-700' : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700';
+    const cardClass = isToday
+        ? 'bg-green-50 border-green-200 shadow-md dark:bg-green-900 dark:border-green-700'
+        : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700';
+
     let photoPath = null;
     let initials = '?';
     let displayName = pjrName || 'Libur';
     let displayJabatan = 'Penanggung Jawab';
     if (pjrName && staffDetails[pjrName]) {
         const details = staffDetails[pjrName];
-        photoPath = details.photo ? `images/${details.photo}` : null;
+        photoPath = details.photo ? `images/${details.photo}?v=${new Date().getTime()}` : null;
         initials = getInitials(pjrName);
         displayJabatan = details.jabatan || 'Staf';
     } else if (pjrName) {
@@ -154,7 +154,7 @@ function createScheduleCard(labName, pjrName, isToday = false, date) {
     const clickEvent = pjrName ? `showCourseSchedule('${labName}', '${date.toISOString()}')` : `event.stopPropagation()`;
 
     return `
-          <div class="p-2 md:p-4 rounded-lg border-2 ${cardClass} fade-in hover:shadow-lg mobile-card ${pjrName ? 'schedule-card hover:scale-105' : ''}"
+          <div class="p-2 md:p-4 rounded-lg border-2 ${cardClass} fade-in hover:shadow-lg mobile-card ${pjrName ? 'schedule-card hover:scale-105 hover:border-red-500' : ''}"
                onclick="${clickEvent}" ${pjrName ? 'role="button" tabindex="0"' : ''}>
               <div class="mb-2 md:mb-3">
                   <h3 class="font-bold text-gray-800 dark:text-white text-left text-xs md:text-sm leading-tight">${labName}</h3>
@@ -215,8 +215,9 @@ function updateScheduleDisplay() {
 
     const firstBadge = document.getElementById('first-day-badge');
     const secondBadge = document.getElementById('second-day-badge');
-    const firstDayContainer = firstBadge.closest('.bg-white');
-    const secondDayContainer = secondBadge.closest('.bg-white');
+    const firstDayContainer = firstBadge.closest('.bg-white, .dark\\:bg-gray-800');
+    const secondDayContainer = secondBadge.closest('.bg-white, .dark\\:bg-gray-800');
+
 
     firstDayContainer.className = 'bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 md:p-6 border-l-4';
     secondDayContainer.className = 'bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 md:p-6 border-l-4';
@@ -365,7 +366,8 @@ function hideModal(modalId) {
             !document.getElementById('notification-modal').classList.contains('opacity-0') ||
             !document.getElementById('limit-alert-modal').classList.contains('opacity-0') ||
             !document.getElementById('prev-limit-modal').classList.contains('opacity-0') ||
-            !document.getElementById('course-schedule-modal').classList.contains('opacity-0');
+            !document.getElementById('course-schedule-modal').classList.contains('opacity-0') ||
+            !document.getElementById('search-modal').classList.contains('opacity-0');
 
         if (!anyModalOpen) {
             document.body.style.overflow = '';
@@ -379,8 +381,9 @@ function showPrevLimitModal() { showModal('prev-limit-modal'); }
 function hidePrevLimitModal() { hideModal('prev-limit-modal'); }
 function showCourseModal() { showModal('course-schedule-modal'); }
 function hideCourseModal() { hideModal('course-schedule-modal'); }
+function showSearchModal() { showModal('search-modal'); }
+function hideSearchModal() { hideModal('search-modal'); }
 
-// === PERUBAHAN DI SINI: Menampilkan Tag Aplikasi ===
 function showCourseSchedule(labName, isoDate) {
     const date = new Date(isoDate);
     const namaHari = NAMA_HARI[date.getDay()].toLowerCase();
@@ -395,14 +398,13 @@ function showCourseSchedule(labName, isoDate) {
     dateEl.textContent = formatDate(date);
 
     if (jadwalTersaring.length > 0) {
-        let contentHTML = '<div class="space-y-4">'; // Tambah jarak
+        let contentHTML = '<div class="space-y-4">';
         jadwalTersaring.forEach(item => {
             contentHTML += `
                 <div class="p-4 bg-gray-50 dark:bg-gray-900 rounded-lg border dark:border-gray-700">
                     <p class="font-bold text-red-700 dark:text-red-500">${item.MATA_KULIAH} (${item.KELAS || 'N/A'})</p>
                     <p class="text-sm text-gray-700 dark:text-gray-300">${item.DOSEN_PENGAMPU}</p>
                     <p class="text-sm text-gray-500 dark:text-gray-400 font-medium">${formatJam(item.JAM_MULAI)} - ${formatJam(item.JAM_SELESAI)}</p>
-
                     ${createTagHTML(item.KEBUTUHAN_APLIKASI)}
                 </div>
             `;
@@ -412,44 +414,108 @@ function showCourseSchedule(labName, isoDate) {
     } else {
         contentEl.innerHTML = `
             <div class="text-center py-10">
-                <svg class="w-12 h-12 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                <svg class="w-12 h-12 text-gray-400 dark:text-gray-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                 <p class="text-gray-500 dark:text-gray-400 font-medium">Tidak ada jadwal mata kuliah di ruangan ini pada hari ${NAMA_HARI[date.getDay()]}.</p>
             </div>
         `;
     }
     showCourseModal();
 }
-// === AKHIR PERUBAHAN ===
+
+function displaySearchResults(results, query) {
+    const contentEl = document.getElementById('search-modal-content');
+    const queryEl = document.getElementById('search-modal-query');
+
+    queryEl.textContent = `Hasil pencarian untuk: "${query}"`;
+
+    if (results.length === 0) {
+        contentEl.innerHTML = `
+            <div class="text-center py-10">
+                <svg class="w-12 h-12 text-gray-400 dark:text-gray-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 01-5.656-5.656l3.535-3.536a4 4 0 015.656 0l-3.535 3.536m-3.536 3.536l3.535 3.536a4 4 0 010 5.656l-3.535-3.536a4 4 0 010-5.656z"></path></svg>
+                <p class="text-gray-500 dark:text-gray-400 font-medium">Tidak ada jadwal ditemukan.</p>
+            </div>
+        `;
+        showSearchModal();
+        return;
+    }
+
+    const groupedResults = {};
+    results.forEach(item => {
+        const hari = item.HARI.toUpperCase();
+        if (!groupedResults[hari]) {
+            groupedResults[hari] = [];
+        }
+        groupedResults[hari].push(item);
+    });
+
+    let contentHTML = '<div class="space-y-6">';
+    const sortedDays = Object.keys(groupedResults).sort((a, b) => {
+        return NAMA_HARI.indexOf(a) - NAMA_HARI.indexOf(b);
+    });
+
+    sortedDays.forEach(hari => {
+        contentHTML += `<div><h3 class="search-result-group">${hari}</h3><div class="space-y-3 mt-3">`;
+
+        groupedResults[hari].forEach(item => {
+            contentHTML += `
+                <div class="search-result-item">
+                    <p class="font-bold text-red-700 dark:text-red-500">${item.MATA_KULIAH} (${item.KELAS || 'N/A'})</p>
+                    <p class="text-sm text-gray-700 dark:text-gray-300"><span class="font-medium">Dosen:</span> ${item.DOSEN_PENGAMPU}</p>
+                    <div class="flex justify-between items-center mt-2">
+                        <span class="text-sm text-gray-500 dark:text-gray-400 font-medium">${formatJam(item.JAM_MULAI)} - ${formatJam(item.JAM_SELESAI)}</span>
+                        <span class="text-sm font-semibold text-green-600 dark:text-green-500">${item.RUANG}</span>
+                    </div>
+                </div>
+            `;
+        });
+
+        contentHTML += `</div></div>`;
+    });
+
+    contentHTML += '</div>';
+    contentEl.innerHTML = contentHTML;
+    showSearchModal();
+}
+
+function handleSearch(event) {
+    const query = event.target.value.toLowerCase().trim();
+    if (query.length < 3) {
+        hideSearchModal();
+        return;
+    }
+    if (!courseSchedule) return;
+    const results = courseSchedule.filter(item => {
+        return (item.MATA_KULIAH?.toLowerCase() || '').includes(query) ||
+               (item.DOSEN_PENGAMPU?.toLowerCase() || '').includes(query) ||
+               (item.KELAS?.toLowerCase() || '').includes(query);
+    });
+    displaySearchResults(results, query);
+}
 
 // --- INISIALISASI APLIKASI ---
 
 document.addEventListener('DOMContentLoaded', async function() {
     try {
-        // Hapus cache busting ?v=... agar Service Worker bisa mengambil alih
-        const response = await fetch('data.json');
+        const response = await fetch('data.json?v=' + new Date().getTime());
 
         if (!response.ok) {
             throw new Error(`Gagal memuat data: ${response.statusText}`);
         }
         const data = await response.json();
 
-        // 1. Muat semua data ke variabel global
         labData = data.labs;
         staffDetails = data.staffDetails;
         holidays = data.holidays;
         specialSchedules = data.specialSchedules;
         courseSchedule = data.courseSchedule || [];
 
-        // 2. Optimasi: Proses data jadwal kuliah
         NAMA_HARI.forEach(hari => {
             schedulesByDayAndRoom[hari.toLowerCase()] = {};
         });
-
         courseSchedule.forEach(item => {
             const hari = item.HARI ? item.HARI.toLowerCase() : '';
             const ruang = item.RUANG ? item.RUANG.trim() : '';
             if (!hari || !ruang) return;
-
             if (!schedulesByDayAndRoom[hari]) {
                 schedulesByDayAndRoom[hari] = {};
             }
@@ -458,7 +524,6 @@ document.addEventListener('DOMContentLoaded', async function() {
             }
             schedulesByDayAndRoom[hari][ruang].push(item);
         });
-
         for (const hari in schedulesByDayAndRoom) {
             for (const ruang in schedulesByDayAndRoom[hari]) {
                 schedulesByDayAndRoom[hari][ruang].sort((a, b) => {
@@ -467,16 +532,13 @@ document.addEventListener('DOMContentLoaded', async function() {
             }
         }
 
-        // 3. Tampilkan modal notifikasi awal
         showModal('notification-modal');
 
-        // 4. Atur tanggal dan muat jadwal PJR
         currentViewDate = new Date();
         currentViewDate.setHours(0, 0, 0, 0);
 
         updateScheduleDisplay();
 
-        // 5. Atur semua event listener
         document.getElementById('prev-btn').addEventListener('click', goToPreviousDay);
         document.getElementById('next-btn').addEventListener('click', goToNextDay);
         document.getElementById('today-btn').addEventListener('click', goToToday);
@@ -487,12 +549,17 @@ document.addEventListener('DOMContentLoaded', async function() {
         document.getElementById('course-modal-close-btn').addEventListener('click', hideCourseModal);
         document.getElementById('course-modal-close-btn-x').addEventListener('click', hideCourseModal);
 
+        document.getElementById('search-input').addEventListener('input', handleSearch);
+        document.getElementById('search-modal-close-btn').addEventListener('click', hideSearchModal);
+        document.getElementById('search-modal-close-btn-x').addEventListener('click', hideSearchModal);
+
         document.addEventListener('keydown', function(event) {
             if (event.key === 'Escape') {
                 hideModal('notification-modal');
                 hideLimitModal();
                 hidePrevLimitModal();
                 hideCourseModal();
+                hideSearchModal();
             }
         });
 
@@ -520,12 +587,11 @@ document.addEventListener('DOMContentLoaded', async function() {
             });
         }
 
-        // === LOGIKA BARU: DARK MODE TOGGLE ===
+        // === LOGIKA DARK MODE (DEFAULT KE LIGHT) ===
         const toggleBtn = document.getElementById('dark-mode-toggle');
         const sunIcon = document.getElementById('sun-icon');
         const moonIcon = document.getElementById('moon-icon');
 
-        // Fungsi untuk mengaktifkan/menonaktifkan dark mode
         const setDarkMode = (isDark) => {
             if (isDark) {
                 document.documentElement.classList.add('dark');
@@ -540,14 +606,13 @@ document.addEventListener('DOMContentLoaded', async function() {
             }
         };
 
-        // Cek tema yang tersimpan saat memuat halaman
+        // Cek tema yang tersimpan. Jika tidak ada, cek preferensi OS.
         if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
             setDarkMode(true);
         } else {
-            setDarkMode(false);
+            setDarkMode(false); // Default ke light
         }
 
-        // Tambahkan event listener ke tombol
         toggleBtn.addEventListener('click', () => {
             setDarkMode(!document.documentElement.classList.contains('dark'));
         });
