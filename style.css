@@ -42,6 +42,25 @@ body {
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
+/* === GAYA BARU UNTUK TAG APLIKASI === */
+.app-tag {
+    display: inline-block;
+    background-color: #e5e7eb; /* bg-gray-200 */
+    color: #374151; /* text-gray-700 */
+    border-radius: 9999px; /* rounded-full */
+    padding: 2px 10px;
+    font-size: 12px;
+    font-weight: 500;
+    margin: 2px;
+}
+/* Style tag untuk dark mode */
+.dark .app-tag {
+    background-color: #374151; /* dark:bg-gray-700 */
+    color: #d1d5db; /* dark:text-gray-300 */
+}
+/* === AKHIR GAYA BARU === */
+
+
 /* Mobile optimizations */
 @media (max-width: 768px) {
     .photo-container {
