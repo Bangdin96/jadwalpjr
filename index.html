@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jadwal PJR UPA TIK</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <link rel="manifest" href="manifest.json">
+
+  <link rel="stylesheet" href="style.css">
+
+  <script src="app.js" defer></script>
+
+  <style>@view-transition { navigation: auto; }</style>
+</head>
+<body class="bg-gradient-to-br from-red-50 to-red-100 min-h-screen">
+
+  <header class="bg-white shadow-lg border-b-4 border-red-800 sticky top-0 z-30">
+    <div class="max-w-6xl mx-auto px-4 py-3 mobile-header">
+      <div class="text-center">
+        <div class="flex items-center justify-center gap-3 md:gap-4 mb-2">
+          <img src="image.png" alt="Logo UPA TIK" class="w-12 h-12 md:w-16 md:h-16 object-contain" onerror="this.style.display='none';">
+          <h1 class="text-2xl md:text-3xl font-bold text-gray-900 mobile-title">Jadwal PJR UPA TIK</h1>
+        </div>
+        <p class="text-gray-600 mobile-subtitle">Sistem Penjadwalan Penanggung Jawab Ruangan <strong>By Bangdin Prakom Terampil</strong></p>
+      </div>
+    </div>
+  </header>
+
+  <main class="px-2 md:px-4 py-4 md:py-8">
+    <div class="bg-white rounded-xl shadow-lg p-3 md:p-4 mb-4 md:mb-6">
+      <div class="flex justify-between items-center gap-2">
+        <button id="prev-btn" class="px-2 md:px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors text-xs md:text-sm mobile-nav-btn flex-shrink-0">
+          <span class="hidden sm:inline">← Hari Sebelumnya</span>
+          <span class="sm:hidden">← Prev</span>
+        </button>
+        <div class="text-center flex-1 min-w-0">
+          <p class="text-xs md:text-sm text-gray-600">Menampilkan jadwal</p>
+          <p id="date-range" class="font-semibold text-sm md:text-lg truncate"></p>
+        </div>
+        <button id="next-btn" class="px-2 md:px-4 py-2 bg-red-700 hover:bg-red-800 text-white rounded-lg transition-colors text-xs md:text-sm mobile-nav-btn flex-shrink-0">
+          <span class="hidden sm:inline">Hari Selanjutnya →</span>
+          <span class="sm:hidden">Next →</span>
+        </button>
+      </div>
+      <div class="text-center mt-3 md:mt-4">
+        <button id="today-btn" class="px-3 md:px-4 py-2 bg-red-700 hover:bg-red-800 text-white rounded-lg transition-colors text-xs md:text-sm mobile-nav-btn">
+          Kembali ke Hari Ini
+        </button>
+      </div>
+    </div>
+
+    <div id="loading-spinner" class="text-center py-10">
+        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-red-700 mx-auto"></div>
+        <p class="text-gray-600 mt-4">Memuat jadwal...</p>
+    </div>
+
+    <div id="schedule-view" class="hidden grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+      <div class="bg-white rounded-xl shadow-lg p-4 md:p-6 border-l-4 border-green-500">
+        <h2 class="text-lg md:text-2xl font-bold mb-4 md:mb-6 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-0">
+          <span id="first-day-badge" class="bg-green-100 text-green-800 px-2 md:px-3 py-1 rounded-full text-xs md:text-sm sm:mr-3 self-start">HARI INI</span>
+          <span id="first-day-date" class="text-sm md:text-2xl"></span>
+        </h2>
+        <div id="first-day-schedule" class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-4">
+        </div>
+      </div>
+      <div class="bg-white rounded-xl shadow-lg p-4 md:p-6 border-l-4 border-blue-500">
+        <h2 class="text-lg md:text-2xl font-bold mb-4 md:mb-6 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-0">
+          <span id="second-day-badge" class="bg-blue-100 text-blue-800 px-2 md:px-3 py-1 rounded-full text-xs md:text-sm sm:mr-3 self-start">AKAN DATANG</span>
+          <span id="second-day-date" class="text-sm md:text-2xl"></span>
+        </h2>
+        <div id="second-day-schedule" class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-4">
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="mt-12 pb-8 text-center text-gray-600 text-sm">
+    <p>&copy; 2025 UPA TIK - Universitas Sulawesi Barat</p>
+    <p class="mt-1">Dikelola oleh Tim Pranata Komputer</p>
+  </footer>
+
+  <div id="notification-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 z-50 flex items-center justify-center p-4 transition-opacity duration-300 opacity-0 pointer-events-none">
+      <div class="bg-white rounded-xl shadow-2xl max-w-lg w-full transform transition-all duration-300 scale-95 flex flex-col max-h-[90vh] overflow-hidden">
+
+          <div class="p-6 md:p-8 pb-4 flex-shrink-0">
+              <h2 class="text-xl md:text-2xl font-bold text-red-700 mb-4 flex items-center">
+                  <svg class="w-6 h-6 mr-3 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                  Pemberitahuan Penting PJR
+              </h2>
+              <p class="text-gray-600 mb-6 border-l-4 border-yellow-500 pl-3 text-justify">
+                  Mohon perhatian untuk semua staf Penanggung Jawab Ruangan (PJR) terkait jadwal dan tanggung jawab harian.
+              </p>
+              <h3 class="font-semibold text-gray-800 mb-3">Tanggung Jawab & Fitur:</h3>
+          </div>
+
+          <div class="px-6 md:px-8 pb-6 overflow-y-auto">
+              <ol class="list-decimal list-outside text-sm text-gray-700 space-y-2 pl-5 text-justify">
+                  <li>Setiap Staf Penanggung Jawab Ruangan Tetap Bertanggung Jawab Pada Ruangannya.</li>
+                  <li>Setiap Staf Tetap Wajib Datang Setiap Hari, Ini Hanya Jadwal Tanggung Jawab Harian (Buka/Tutup Ruangan, Matikan PC Setelah Penggunaan Sebelum Tutup Ruangan, Dst Sesuai tata Tertib Penggunaan LAB).</li>
+                  <li>Di Harapkan Tidak Ada Lagi Dosen/Mahasiswa Yang Menunggu/Mengeluh Di Karenakan Ruangan Belum/Terlambat Terbuka.</li>
+                  <li>Jika Ada Kendala Silahkan Berkoordinasi Dengan Teman PJR Ruangan Masing-Masing.</li>
+                  <li>Jadwal Bulan Berikutnya Akan Di Update H-1 Bulan Berikutnya.</li>
+                  <li>PJR Yang Izin/Sakit/Dinas Luar/Cuti, Ruangannya Di Buka/Tutup Oleh PJR Yang Memiliki Jadwal Bersamaan.</li>
+                  <li><strong>Jangan Pulang Sebelum Perkuliahan Di Ruangannya Belum Selesai Karena Perangkat PC, AC, Dsb Harus Di Matikan, Di Kecualikan Jika Izin Atau PJR Lain Bersedia Mengakomodir</strong></li>
+                  <li class="font-bold text-red-700">Klik Foto PJR (selain 'Libur') untuk melihat jadwal mata kuliah di ruangan tersebut.</li>
+              </ol>
+          </div>
+
+          <div class="p-4 bg-gray-50 border-t flex justify-end rounded-b-xl flex-shrink-0">
+              <button id="modal-close-btn" class="px-6 py-2 bg-red-700 text-white font-medium rounded-lg hover:bg-red-800 transition-colors shadow-md">
+                  Saya Mengerti
+              </button>
+          </div>
+      </div>
+  </div>
+
+  <div id="limit-alert-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 z-50 flex items-center justify-center p-4 transition-opacity duration-300 opacity-0 pointer-events-none">
+    <div class="bg-white rounded-xl shadow-2xl max-w-sm w-full transform transition-all duration-300 scale-95">
+        <div class="p-6 text-center">
+            <svg class="w-12 h-12 text-red-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path></svg>
+            <h3 class="text-lg font-medium text-gray-900 mb-2">Batas Tampilan Jadwal</h3>
+            <p class="text-sm text-gray-600">Anda hanya diizinkan melihat jadwal 2 hari ke depan.</p>
+        </div>
+        <div class="p-4 bg-gray-50 border-t flex justify-center rounded-b-xl">
+            <button id="limit-modal-close-btn" class="px-6 py-2 bg-red-700 text-white font-medium rounded-lg hover:bg-red-800 transition-colors shadow-md">
+                Saya Mengerti
+            </button>
+        </div>
+    </div>
+  </div>
+
+  <div id="prev-limit-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 z-50 flex items-center justify-center p-4 transition-opacity duration-300 opacity-0 pointer-events-none">
+    <div class="bg-white rounded-xl shadow-2xl max-w-sm w-full transform transition-all duration-300 scale-95">
+        <div class="p-6 text-center">
+            <svg class="w-12 h-12 text-yellow-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+            <h3 class="text-lg font-medium text-gray-900 mb-2">Batas Tampilan Jadwal</h3>
+            <p class="text-sm text-gray-600">Maaf, Jadwal Yang Ingin Anda Lihat Sudah Berlalu / Jadwal Yang Di Tampilkan Sudah Per Hari Ini</p>
+        </div>
+        <div class="p-4 bg-gray-50 border-t flex justify-center rounded-b-xl">
+            <button id="prev-limit-modal-close-btn" class="px-6 py-2 bg-red-700 text-white font-medium rounded-lg hover:bg-red-800 transition-colors shadow-md">
+                Saya Mengerti
+            </button>
+        </div>
+    </div>
+  </div>
+
+  <div id="course-schedule-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 z-50 flex items-center justify-center p-4 transition-opacity duration-300 opacity-0 pointer-events-none">
+    <div class="bg-white rounded-xl shadow-2xl max-w-3xl w-full transform transition-all duration-300 scale-95 flex flex-col max-h-[90vh] overflow-hidden">
+        <div class="p-6 flex-shrink-0">
+            <div class="flex justify-between items-start mb-4">
+                <div>
+                    <h2 id="modal-lab-title" class="text-xl md:text-2xl font-bold text-red-700">Jadwal Ruangan</h2>
+                    <p id="modal-lab-date" class="text-gray-600 mt-1"></p>
+                </div>
+                <button id="course-modal-close-btn-x" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+        </div>
+
+        <div id="modal-lab-content" class="px-6 pb-6 overflow-y-auto">
+            </div>
+
+        <div class="p-4 bg-gray-50 border-t flex justify-end rounded-b-xl flex-shrink-0">
+            <button id="course-modal-close-btn" class="px-6 py-2 bg-red-700 text-white font-medium rounded-lg hover:bg-red-800 transition-colors shadow-md">
+                Tutup
+            </button>
+        </div>
+    </div>
+  </div>
+
+  <div id="fab-container" class="fixed bottom-6 right-6 z-40">
+    <div id="fab-popup" class="absolute bottom-20 right-0 mb-2 w-64 bg-white rounded-lg shadow-xl p-4 transition-all duration-300 origin-bottom-right transform scale-95 opacity-0 pointer-events-none">
+        <p class="text-sm text-gray-800 mb-3">Butuh Bantuan/Ada Saran? Hubungi Bangdin?</p>
+        <div class="flex justify-between gap-2">
+            <button id="fab-close-btn" class="w-1/2 text-xs bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 px-3 rounded-lg">Tidak</button>
+            <a href="https://wa.me/6285145292003" target="_blank" class="w-1/2 text-xs bg-green-500 hover:bg-green-600 text-white py-2 px-3 rounded-lg text-center font-medium">Ya, hubungi</a>
+        </div>
+    </div>
+
+    <button id="fab-button" class="w-14 h-14 bg-green-500 rounded-full shadow-lg text-white flex items-center justify-center transform transition-transform hover:scale-110 focus:outline-none">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" class="w-7 h-7" fill="currentColor">
+            <path d="M380.9 97.1C339 55.1 283.2 32 223.9 32c-122.4 0-222 99.6-222 222 0 39.1 10.2 77.3 29.6 111L0 480l117.7-30.9c32.4 17.7 68.9 27 106.1 27h.1c122.3 0 224.1-99.6 224.1-222 0-59.3-25.2-115-67.1-157zm-157 341.6c-33.8 0-67.1-9.2-96.2-26.2l-6.7-4-71.6 18.8 19.1-69.8-4.4-7c-18.5-29.4-28.2-63.3-28.2-98.1 0-101.7 82.8-184.5 184.6-184.5 49.3 0 95.6 19.2 130.4 54.1 34.8 34.9 56.2 81.2 56.1 130.5 0 101.8-84.9 184.6-186.6 184.6zm101.2-138.2c-5.5-2.8-32.8-16.2-37.9-18-5.1-1.9-8.8-2.8-12.5 2.8-3.7 5.6-14.3 18-17.6 21.8-3.2 3.7-6.5 4.2-12 1.4-32.6-16.3-54-29.1-75.5-66-5.7-9.8 5.7-9.1 16.3-30.3 1.8-3.7.9-6.9-.5-9.7-1.4-2.8-12.5-30.1-17.1-41.2-4.5-10.8-9.1-9.3-12.5-9.5-3.2-.2-6.9-.2-10.6-.2-3.7 0-9.7 1.4-14.8 6.9-5.1 5.6-19.4 19-19.4 46.3 0 27.3 19.9 53.7 22.6 57.4 2.8 3.7 39.1 59.7 94.8 83.8 35.2 15.2 49 16.5 66.6 13.9 10.7-1.6 32.8-13.4 37.4-26.4 4.6-13 4.6-24.1 3.2-26.4-1.3-2.5-5-3.9-10.5-6.6z"/>
+        </svg>
+    </button>
+  </div>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('service-worker.js')
+          .then(registration => {
+            console.log('Service Worker berhasil didaftarkan:', registration);
+          })
+          .catch(error => {
+            console.log('Pendaftaran Service Worker gagal:', error);
+          });
+      });
+    }
+  </script>
+</body>
+</html>

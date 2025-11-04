@@ -1,0 +1,21 @@
+{
+  "name": "Jadwal PJR UPA TIK",
+  "short_name": "Jadwal PJR",
+  "description": "Aplikasi Jadwal Penanggung Jawab Ruangan UPA TIK Unsulbar",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#fef2f2",
+  "theme_color": "#991b1b",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ]
+}
