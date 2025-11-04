@@ -25,7 +25,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['password'])) {
 }
 
 // Tentukan halaman mana yang akan dimuat
-// Defaultnya adalah 'courses' (Jadwal Mata Kuliah)
 $page = $_GET['page'] ?? 'courses';
 $page_file = '';
 
@@ -52,23 +51,23 @@ if ($is_logged_in) {
   <title>Admin Panel - Jadwal PJR</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-100 min-h-screen">
+<body class="bg-gray-200 min-h-screen">
 
-<nav class="bg-blue-800 text-white shadow-md">
+<nav class="bg-slate-800 text-white shadow-md">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
     <div class="flex justify-between h-16">
       <div class="flex items-center">
-        <h1 class="text-xl font-bold">Admin Panel</h1>
+        <h1 class="text-xl font-bold">Admin Panel Jadwal</h1>
       </div>
       <?php if ($is_logged_in): ?>
       <div class="flex items-center space-x-4">
-        <a href="?page=courses" class="px-3 py-2 rounded-md text-sm font-medium <?php echo ($page === 'courses') ? 'bg-blue-900' : 'hover:bg-blue-700'; ?>">
+        <a href="?page=courses" class="px-3 py-2 rounded-md text-sm font-medium <?php echo ($page === 'courses') ? 'bg-slate-900' : 'hover:bg-slate-700'; ?>">
           Jadwal Mata Kuliah
         </a>
-        <a href="?page=staff" class="px-3 py-2 rounded-md text-sm font-medium <?php echo ($page === 'staff') ? 'bg-blue-900' : 'hover:bg-blue-700'; ?>">
+        <a href="?page=staff" class="px-3 py-2 rounded-md text-sm font-medium <?php echo ($page === 'staff') ? 'bg-slate-900' : 'hover:bg-slate-700'; ?>">
           Data PJR
         </a>
-        <a href="?page=holidays" class="px-3 py-2 rounded-md text-sm font-medium <?php echo ($page === 'holidays') ? 'bg-blue-900' : 'hover:bg-blue-700'; ?>">
+        <a href="?page=holidays" class="px-3 py-2 rounded-md text-sm font-medium <?php echo ($page === 'holidays') ? 'bg-slate-900' : 'hover:bg-slate-700'; ?>">
           Hari Libur
         </a>
         <a href="?action=logout" class="px-3 py-2 rounded-md text-sm font-medium bg-red-600 hover:bg-red-700">Logout</a>
@@ -77,6 +76,17 @@ if ($is_logged_in) {
     </div>
   </div>
 </nav>
+
+<div id="toast-container" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 transition-opacity duration-300 ease-out opacity-0 pointer-events-none">
+    <div id="toast-success" class="hidden bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8 text-center max-w-sm mx-auto transform transition-all duration-300 ease-out scale-95">
+        <svg class="w-16 h-16 text-green-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        <p id="toast-success-msg" class="mt-4 text-xl font-medium text-gray-900 dark:text-white">Data berhasil disimpan!</p>
+    </div>
+    <div id="toast-error" class="hidden bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8 text-center max-w-sm mx-auto transform transition-all duration-300 ease-out scale-95">
+        <svg class="w-16 h-16 text-red-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        <p id="toast-error-msg" class="mt-4 text-xl font-medium text-gray-900 dark:text-white">Data berhasil dihapus.</p>
+    </div>
+</div>
 
 <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
   <?php if (!$is_logged_in): ?>
@@ -103,7 +113,6 @@ if ($is_logged_in) {
     </div>
   <?php else: ?>
     <?php
-      // Memuat file halaman yang sesuai
       if ($page_file && file_exists($page_file)) {
           include $page_file;
       } else {
@@ -112,6 +121,56 @@ if ($is_logged_in) {
     ?>
   <?php endif; ?>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const status = urlParams.get('status');
+
+        if (status) {
+            let container = document.getElementById('toast-container');
+            let toastToShow = null;
+            let toastMessage = '';
+
+            if (status === 'saved') {
+                toastToShow = document.getElementById('toast-success');
+                toastMessage = 'Data berhasil disimpan!';
+                document.getElementById('toast-success-msg').textContent = toastMessage;
+            } else if (status === 'deleted') {
+                toastToShow = document.getElementById('toast-error');
+                toastMessage = 'Data berhasil dihapus.';
+                document.getElementById('toast-error-msg').textContent = toastMessage;
+            }
+
+            if (toastToShow) {
+                const toastContent = toastToShow.querySelector('.transform') || toastToShow;
+
+                container.classList.remove('opacity-0', 'pointer-events-none');
+                toastToShow.classList.remove('hidden');
+
+                setTimeout(() => {
+                    toastContent.classList.remove('scale-95');
+                    toastContent.classList.add('scale-100');
+                }, 50);
+
+                setTimeout(() => {
+                    container.classList.add('opacity-0');
+                    toastContent.classList.add('scale-95');
+                    toastContent.classList.remove('scale-100');
+                }, 1500);
+
+                setTimeout(() => {
+                    container.classList.add('pointer-events-none');
+                    toastToShow.classList.add('hidden');
+                }, 1800);
+
+                urlParams.delete('status');
+                const newUrl = window.location.pathname + '?' + urlParams.toString();
+                history.replaceState(null, '', newUrl);
+            }
+        }
+    });
+</script>
 
 </body>
 </html>
