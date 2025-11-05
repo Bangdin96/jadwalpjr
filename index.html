@@ -1,268 +1,87 @@
-<!doctype html>
-<html lang="id">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Jadwal PJR UPA TIK</title>
+// PERUBAHAN TUNGGAL ADA DI BARIS INI (v6 menjadi v7)
+const CACHE_NAME = 'jadwal-pjr-cache-v7';
+// Daftar file inti yang akan disimpan
+const CORE_FILES = [
+  '.',
+  'index.html',
+  'style.css',
+  'app.js',
+  'manifest.json',
+  'https://cdn.tailwindcss.com',
+  'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap'
+  // Ikon dan gambar PJR akan di-cache saat dibutuhkan
+];
 
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    // Konfigurasi Tailwind untuk Dark Mode
-    tailwind.config = {
-      darkMode: 'class', // 'class' atau 'media'
-    }
-  </script>
+// 1. Saat Service Worker di-install
+self.addEventListener('install Aplikasi', (event) => {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => {
+      console.log('Service Worker: Caching core files (v7)...');
+      return cache.addAll(CORE_FILES);
+    })
+  );
+  self.skipWaiting();
+});
 
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+// 2. Saat Service Worker aktif
+self.addEventListener('activate', (event) => {
+  // Hapus cache lama jika ada
+  event.waitUntil(
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames.map((cacheName) => {
+          if (cacheName !== CACHE_NAME) {
+            console.log('Service Worker: Menghapus cache lama:', cacheName);
+            return caches.delete(cacheName);
+          }
+        })
+      );
+    })
+  );
+  return self.clients.claim();
+});
 
-  <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="style.css">
-  <script src="app.js" defer></script>
+// 3. Saat aplikasi mengambil file (event 'fetch')
+self.addEventListener('fetch', (event) => {
+  const requestUrl = new URL(event.request.url);
 
-  <style>@view-transition { navigation: auto; }</style>
-</head>
-<body class="bg-gradient-to-br from-red-50 to-red-100 dark:from-gray-900 dark:to-gray-800 min-h-screen text-gray-800 dark:text-gray-300">
-
-  <header class="bg-white dark:bg-gray-800 shadow-lg border-b-4 border-red-800 dark:border-red-700 sticky top-0 z-30">
-    <div class="max-w-6xl mx-auto px-4 py-3 mobile-header relative">
-      <div class="text-center">
-        <div class="flex items-center justify-center gap-3 md:gap-4 mb-2">
-          <img src="image.png" alt="Logo UPA TIK" class="w-12 h-12 md:w-16 md:h-16 object-contain" onerror="this.style.display='none';">
-          </div>
-        <p class="text-gray-600 dark:text-gray-400 mobile-subtitle"><strong>Sistem Informasi Jadwal PJR</strong></p>
-        </div>
-
-      <button id="dark-mode-toggle" class="absolute top-4 right-4 p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none">
-        <svg id="sun-icon" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M12 12a5 5 0 100-10 5 5 0 000 10z" />
-        </svg>
-        <svg id="moon-icon" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-        </svg>
-      </button>
-      </div>
-  </header>
-
-  <main class="px-2 md:px-4 py-4 md:py-8">
-
-    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-3 md:p-4 mb-4 md:mb-6 border border-gray-200 dark:border-gray-700">
-      <div class="flex justify-between items-center gap-2">
-        <button id="prev-btn" class="px-2 md:px-4 py-2 bg-gray-100 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600 hover:bg-gray-200 rounded-lg transition-colors text-xs md:text-sm mobile-nav-btn flex-shrink-0">
-          <span class="hidden sm:inline">← Hari Sebelumnya</span>
-          <span class="sm:hidden">← Prev</span>
-        </button>
-        <div class="text-center flex-1 min-w-0">
-          <p class="text-xs md:text-sm text-gray-600 dark:text-gray-400">Menampilkan jadwal</p>
-          <p id="date-range" class="font-semibold text-sm md:text-lg text-gray-900 dark:text-white truncate"></p>
-        </div>
-        <button id="next-btn" class="px-2 md:px-4 py-2 bg-red-700 hover:bg-red-800 text-white rounded-lg transition-colors text-xs md:text-sm mobile-nav-btn flex-shrink-0">
-          <span class="hidden sm:inline">Hari Selanjutnya →</span>
-          <span class="sm:hidden">Next →</span>
-        </button>
-      </div>
-
-      <div class="flex flex-row md:flex-row justify-between items-center gap-4 mt-3 md:mt-4">
-
-          <div class="w-auto hidden md:block">
-              <button id="today-btn" class="px-3 md:px-4 py-2.5 bg-red-700 hover:bg-red-800 text-white rounded-lg transition-colors text-xs md:text-sm mobile-nav-btn">
-                Kembali ke Hari Ini
-              </button>
-          </div>
-
-          <div class="relative w-full flex-1">
-              <input type="search" id="search-input" placeholder="Cari Dosen, Mata Kuliah, atau Kelas..."
-                     class="w-full p-2.5 pl-10 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500">
-              <svg class="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-          </div>
-
-          <div id="install-button-container" class="w-auto hidden md:hidden"> <button id="install-app-btn" class="flex items-center justify-center gap-2 px-3 md:px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors text-xs md:text-sm mobile-nav-btn">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
-                </svg>
-                <span class="hidden sm:inline">Install Aplikasi</span>
-                <span class="sm:hidden">Install</span>
-            </button>
-          </div>
-          </div>
-    </div>
-
-    <div id="loading-spinner" class="text-center py-10">
-        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-red-700 mx-auto"></div>
-        <p class="text-gray-600 dark:text-gray-400 mt-4">Memuat jadwal...</p>
-    </div>
-
-    <div id="schedule-view" class="hidden grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
-      <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 md:p-6 border-l-4 border-green-500">
-        <h2 class="text-lg md:text-2xl font-bold mb-4 md:mb-6 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-0">
-          <span id="first-day-badge" class="bg-green-100 text-green-800 px-2 md:px-3 py-1 rounded-full text-xs md:text-sm sm:mr-3 self-start">HARI INI</span>
-          <span id="first-day-date" class="text-sm md:text-2xl text-gray-900 dark:text-white"></span>
-        </h2>
-        <div id="first-day-schedule" class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-4">
-        </div>
-      </div>
-      <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 md:p-6 border-l-4 border-blue-500">
-        <h2 class="text-lg md:text-2xl font-bold mb-4 md:mb-6 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-0">
-          <span id="second-day-badge" class="bg-blue-100 text-blue-800 px-2 md:px-3 py-1 rounded-full text-xs md:text-sm sm:mr-3 self-start">AKAN DATANG</span>
-          <span id="second-day-date" class="text-sm md:text-2xl text-gray-900 dark:text-white"></span>
-        </h2>
-        <div id="second-day-schedule" class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-4">
-        </div>
-      </div>
-    </div>
-  </main>
-
-  <footer class="mt-12 pb-8 text-center text-gray-600 dark:text-gray-400 text-sm">
-    <p>&copy; 2025 UPA TIK - Universitas Sulawesi Barat</p>
-    <p class="mt-1">Dikelola oleh <strong> Muh. Dinar, S.Kom </strong> Pranata Komputer Terampil</p>
-  </footer>
-
-  <div id="notification-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 z-50 flex items-center justify-center p-4 transition-opacity duration-300 opacity-0 pointer-events-none">
-      <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-lg w-full transform transition-all duration-300 scale-95 flex flex-col max-h-[90vh] overflow-hidden border dark:border-gray-700">
-          <div class="p-6 md:p-8 pb-4 flex-shrink-0">
-              <h2 class="text-xl md:text-2xl font-bold text-red-700 dark:text-red-500 mb-4 flex items-center">
-                  <svg class="w-6 h-6 mr-3 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
-                  Pemberitahuan Penting PJR
-              </h2>
-              <p class="text-gray-600 dark:text-gray-400 mb-6 border-l-4 border-yellow-500 pl-3 text-justify">
-                  Mohon perhatian untuk semua staf Penanggung Jawab Ruangan (PJR) terkait jadwal dan tanggung jawab harian.
-              </p>
-              <h3 class="font-semibold text-gray-900 dark:text-white mb-3">Tanggung Jawab & Fitur:</h3>
-          </div>
-          <div class="px-6 md:px-8 pb-6 overflow-y-auto">
-              <ol class="list-decimal list-outside text-sm text-gray-700 dark:text-gray-300 space-y-2 pl-5 text-justify">
-                  <li>Setiap Staf Penanggung Jawab Ruangan Tetap Bertanggung Jawab Pada Ruangannya.</li>
-                  <li>Setiap Staf Tetap Wajib Datang Setiap Hari, Ini Hanya Jadwal Tanggung Jawab Harian (Buka/Tutup Ruangan, Matikan PC Setelah Penggunaan Sebelum Tutup Ruangan, Dst Sesuai tata Tertib Penggunaan LAB).</li>
-                  <li>Di Harapkan Tidak Ada Lagi Dosen/Mahasiswa Yang Menunggu/Mengeluh Di Karenakan Ruangan Belum/Terlambat Terbuka.</li>
-                  <li>Jika Ada Kendala Silahkan Berkoordinasi Dengan Teman PJR Ruangan Masing-Masing.</li>
-                  <li>Jadwal Bulan Berikutnya Akan Di Update H-1 Bulan Berikutnya.</li>
-                  <li>PJR Yang Izin/Sakit/Dinas Luar/Cuti, Ruangannya Di Buka/Tutup Oleh PJR Yang Memiliki Jadwal Bersamaan.</li>
-                  <li><strong>Jangan Pulang Sebelum Perkuliahan Di Ruangannya Belum Selesai Karena Perangkat PC, AC, Dsb Harus Di Matikan, Di Kecualikan Jika Izin Atau PJR Lain Bersedia Mengakomodir</strong></li>
-                  <li class="font-bold text-red-700 dark:text-red-500">Klik Foto PJR (selain 'Libur') untuk melihat jadwal mata kuliah di ruangan tersebut.</li>
-              </ol>
-          </div>
-          <div class="p-4 bg-gray-50 dark:bg-gray-900 border-t dark:border-gray-700 flex justify-end rounded-b-xl flex-shrink-0">
-              <button id="modal-close-btn" class="px-6 py-2 bg-red-700 text-white font-medium rounded-lg hover:bg-red-800 transition-colors shadow-md">
-                  Saya Mengerti
-              </button>
-          </div>
-      </div>
-  </div>
-
-  <div id="limit-alert-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 z-50 flex items-center justify-center p-4 transition-opacity duration-300 opacity-0 pointer-events-none">
-    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-sm w-full transform transition-all duration-300 scale-95 border dark:border-gray-700">
-        <div class="p-6 text-center">
-            <svg class="w-12 h-12 text-red-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path></svg>
-            <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">Batas Tampilan Jadwal</h3>
-            <p class="text-sm text-gray-600 dark:text-gray-400">Anda hanya diizinkan melihat jadwal 2 hari ke depan.</p>
-        </div>
-        <div class="p-4 bg-gray-50 dark:bg-gray-900 border-t dark:border-gray-700 flex justify-center rounded-b-xl">
-            <button id="limit-modal-close-btn" class="px-6 py-2 bg-red-700 text-white font-medium rounded-lg hover:bg-red-800 transition-colors shadow-md">
-                Saya Mengerti
-            </button>
-        </div>
-    </div>
-  </div>
-
-  <div id="prev-limit-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 z-50 flex items-center justify-center p-4 transition-opacity duration-300 opacity-0 pointer-events-none">
-    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-sm w-full transform transition-all duration-300 scale-95 border dark:border-gray-700">
-        <div class="p-6 text-center">
-            <svg class="w-12 h-12 text-yellow-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
-            <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">Batas Tampilan Jadwal</h3>
-            <p class="text-sm text-gray-600 dark:text-gray-400">Maaf, Jadwal Yang Ingin Anda Lihat Sudah Berlalu / Jadwal Yang Di Tampilkan Sudah Per Hari Ini</p>
-        </div>
-        <div class="p-4 bg-gray-50 dark:bg-gray-900 border-t dark:border-gray-700 flex justify-center rounded-b-xl">
-            <button id="prev-limit-modal-close-btn" class="px-6 py-2 bg-red-700 text-white font-medium rounded-lg hover:bg-red-800 transition-colors shadow-md">
-                Saya Mengerti
-            </button>
-        </div>
-    </div>
-  </div>
-
-  <div id="course-schedule-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 z-50 flex items-center justify-center p-4 transition-opacity duration-300 opacity-0 pointer-events-none">
-    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-3xl w-full transform transition-all duration-300 scale-95 flex flex-col max-h-[90vh] overflow-hidden border dark:border-gray-700">
-        <div class="p-6 flex-shrink-0">
-            <div class="flex justify-between items-start mb-4">
-                <div>
-                    <h2 id="modal-lab-title" class="text-xl md:text-2xl font-bold text-red-700 dark:text-red-500">Jadwal Ruangan</h2>
-                    <p id="modal-lab-date" class="text-gray-600 dark:text-gray-400 mt-1"></p>
-                </div>
-                <button id="course-modal-close-btn-x" class="text-gray-400 hover:text-gray-600 dark:hover:text-white">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                </button>
-            </div>
-        </div>
-        <div id="modal-lab-content" class="px-6 pb-6 overflow-y-auto">
-        </div>
-        <div class="p-4 bg-gray-50 dark:bg-gray-900 border-t dark:border-gray-700 flex justify-end rounded-b-xl flex-shrink-0">
-            <button id="course-modal-close-btn" class="px-6 py-2 bg-red-700 text-white font-medium rounded-lg hover:bg-red-800 transition-colors shadow-md">
-                Tutup
-            </button>
-        </div>
-    </div>
-  </div>
-
-  <div id="search-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 z-50 flex items-center justify-center p-4 transition-opacity duration-300 opacity-0 pointer-events-none">
-    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-3xl w-full transform transition-all duration-300 scale-95 flex flex-col max-h-[90vh] overflow-hidden border dark:border-gray-700">
-        <div class="p-6 flex-shrink-0 border-b dark:border-gray-700">
-            <div class="flex justify-between items-center mb-4">
-                <h2 id="search-modal-title" class="text-xl md:text-2xl font-bold text-red-700 dark:text-red-500">Hasil Pencarian</h2>
-                <button id="search-modal-close-btn-x" class="text-gray-400 hover:text-gray-600 dark:hover:text-white">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                </button>
-            </div>
-
-            <div class="relative">
-                <input type="search" id="search-modal-query-input" placeholder="Cari Dosen, Mata Kuliah, atau Kelas..."
-                       class="w-full p-2.5 pl-10 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500">
-                <svg class="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-            </div>
-
-        </div>
-        <div id="search-modal-content" class="px-6 pb-6 overflow-y-auto pt-4">
-        </div>
-        <div class="p-4 bg-gray-50 dark:bg-gray-900 border-t dark:border-gray-700 flex justify-end rounded-b-xl flex-shrink-0">
-            <button id="search-modal-close-btn" class="px-6 py-2 bg-red-700 text-white font-medium rounded-lg hover:bg-red-800 transition-colors shadow-md">
-                Tutup
-            </button>
-        </div>
-    </div>
-  </div>
-
-
-  <div id="fab-container" class="fixed bottom-6 right-6 z-40">
-    <div id="fab-popup" class="absolute bottom-20 right-0 mb-2 w-64 bg-white dark:bg-gray-800 rounded-lg shadow-xl p-4 transition-all duration-300 origin-bottom-right transform scale-95 opacity-0 pointer-events-none border dark:border-gray-700">
-        <p class="text-sm text-gray-800 dark:text-gray-200 mb-3">Butuh Bantuan/Ada Saran? Hubungi Bangdin?</p>
-        <div class="flex justify-between gap-2">
-            <button id="fab-close-btn" class="w-1/2 text-xs bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600 hover:bg-gray-300 text-gray-800 py-2 px-3 rounded-lg">Tidak</button>
-            <a href="https://wa.me/6285145292003" target="_blank" class="w-1/2 text-xs bg-green-500 hover:bg-green-600 text-white py-2 px-3 rounded-lg text-center font-medium">Ya, hubungi</a>
-        </div>
-    </div>
-
-    <button id="fab-button" class="w-14 h-14 bg-green-500 rounded-full shadow-lg text-white flex items-center justify-center transform transition-transform hover:scale-110 focus:outline-none">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" class="w-7 h-7" fill="currentColor">
-            <path d="M380.9 97.1C339 55.1 283.2 32 223.9 32c-122.4 0-222 99.6-222 222 0 39.1 10.2 77.3 29.6 111L0 480l117.7-30.9c32.4 17.7 68.9 27 106.1 27h.1c122.3 0 224.1-99.6 224.1-222 0-59.3-25.2-115-67.1-157zm-157 341.6c-33.8 0-67.1-9.2-96.2-26.2l-6.7-4-71.6 18.8 19.1-69.8-4.4-7c-18.5-29.4-28.2-63.3-28.2-98.1 0-101.7 82.8-184.5 184.6-184.5 49.3 0 95.6 19.2 130.4 54.1 34.8 34.9 56.2 81.2 56.1 130.5 0 101.8-84.9 184.6-186.6 184.6zm101.2-138.2c-5.5-2.8-32.8-16.2-37.9-18-5.1-1.9-8.8-2.8-12.5 2.8-3.7 5.6-14.3 18-17.6 21.8-3.2 3.7-6.5 4.2-12 1.4-32.6-16.3-54-29.1-75.5-66-5.7-9.8 5.7-9.1 16.3-30.3 1.8-3.7.9-6.9-.5-9.7-1.4-2.8-12.5-30.1-17.1-41.2-4.5-10.8-9.1-9.3-12.5-9.5-3.2-.2-6.9-.2-10.6-.2-3.7 0-9.7 1.4-14.8 6.9-5.1 5.6-19.4 19-19.4 46.3 0 27.3 19.9 53.7 22.6 57.4 2.8 3.7 39.1 59.7 94.8 83.8 35.2 15.2 49 16.5 66.6 13.9 10.7-1.6 32.8-13.4 37.4-26.4 4.6-13 4.6-24.1 3.2-26.4-1.3-2.5-5-3.9-10.5-6.6z"/>
-        </svg>
-    </button>
-  </div>
-
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('service-worker.js')
-          .then(registration => {
-            console.log('Service Worker berhasil didaftarkan:', registration);
+  // Strategi 1: Untuk data.json (Network First, then Cache)
+  // Selalu coba ambil data terbaru. Jika gagal (offline), ambil dari cache.
+  if (requestUrl.pathname.endsWith('data.json')) {
+    event.respondWith(
+      caches.open(CACHE_NAME).then((cache) => {
+        return fetch(event.request)
+          .then((networkResponse) => {
+            // Berhasil dapat data baru, simpan ke cache
+            cache.put(event.request, networkResponse.clone());
+            return networkResponse;
           })
-          .catch(error => {
-            console.log('Pendaftaran Service Worker gagal:', error);
+          .catch(() => {
+            // Gagal ambil data (offline), ambil dari cache
+            console.log('Service Worker: Gagal ambil data.json dari network, ambil dari cache.');
+            return cache.match(event.request);
           });
+      })
+    );
+    return;
+  }
+
+  // Strategi 2: Untuk semua file lain (Cache First, then Network)
+  // Ambil dari cache dulu untuk kecepatan. Jika tidak ada, ambil dari network.
+  event.respondWith(
+    caches.match(event.request).then((cachedResponse) => {
+      if (cachedResponse) {
+        return cachedResponse; // Langsung ambil dari cache
+      }
+
+      // Tidak ada di cache, ambil dari network
+      return fetch(event.request).then((networkResponse) => {
+        // Simpan respons baru ke cache untuk lain kali
+        return caches.open(CACHE_NAME).then((cache) => {
+          cache.put(event.request, networkResponse.clone());
+          return networkResponse;
+        });
       });
-    }
-  </script>
-</body>
-</html>
+    })
+  );
+});
