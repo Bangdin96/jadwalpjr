@@ -4,7 +4,7 @@ let staffDetails;
 let holidays;
 let specialSchedules;
 let courseSchedule;
-let schedulesByDayAndRoom = {}; 
+let schedulesByDayAndRoom = {};
 
 let currentViewDate = new Date();
 
@@ -51,7 +51,7 @@ function createTagHTML(appString) {
         return '<p class="text-sm text-gray-500 dark:text-gray-400">Tidak ada info aplikasi.</p>';
     }
     const apps = appString.split(',').map(app => app.trim());
-    
+
     let html = '<div class="flex flex-wrap gap-1 mt-2">';
     apps.forEach(app => {
         if (app) {
@@ -66,7 +66,7 @@ function createTagHTML(appString) {
 // --- FUNGSI LOGIKA TANGGAL ---
 
 function isHoliday(date) {
-    const dateStr = getLocalDateString(date); 
+    const dateStr = getLocalDateString(date);
     return holidays && holidays.some(holiday => holiday.date === dateStr);
 }
 
@@ -120,9 +120,9 @@ function getPJRForDate(labName, date) {
     const pjrCount = pjrList.length;
     const target = new Date(date);
     target.setHours(0, 0, 0, 0);
-    
-    const dateStr = getLocalDateString(date); 
-    
+
+    const dateStr = getLocalDateString(date);
+
     if (specialSchedules) {
         const special = specialSchedules.find(s => s.date === dateStr);
         if (special) { return pjrList[special.pjrIndex]; }
@@ -133,32 +133,28 @@ function getPJRForDate(labName, date) {
 }
 
 function createScheduleCard(labName, pjrName, isToday = false, date) {
-    const cardClass = isToday 
-        ? 'bg-green-50 border-green-200 shadow-md dark:bg-green-900 dark:border-green-700' 
+    const cardClass = isToday
+        ? 'bg-green-50 border-green-200 shadow-md dark:bg-green-900 dark:border-green-700'
         : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700';
-    
+
     let photoPath = null;
     let initials = '?';
     let displayName = pjrName || 'Libur';
-    let displayJabatan = 'Penanggung Jawab'; 
+    let displayJabatan = 'Penanggung Jawab';
     if (pjrName && staffDetails[pjrName]) {
         const details = staffDetails[pjrName];
-        
-        // === PERUBAHAN DI SINI: Cache buster "?v=..." telah dihapus ===
-        photoPath = details.photo ? `images/${details.photo}` : null;
-        // === AKHIR PERUBAHAN ===
-
+        photoPath = details.photo ? `images/${details.photo}?v=${new Date().getTime()}` : null;
         initials = getInitials(pjrName);
-        displayJabatan = details.jabatan || 'Staf'; 
+        displayJabatan = details.jabatan || 'Staf';
     } else if (pjrName) {
         initials = getInitials(pjrName);
         displayJabatan = 'Staf';
     }
 
     const clickEvent = pjrName ? `showCourseSchedule('${labName}', '${date.toISOString()}')` : `event.stopPropagation()`;
-    
+
     return `
-          <div class="p-2 md:p-4 rounded-lg border-2 ${cardClass} fade-in hover:shadow-lg mobile-card ${pjrName ? 'schedule-card hover:scale-105 hover:border-red-500' : ''}" 
+          <div class="p-2 md:p-4 rounded-lg border-2 ${cardClass} fade-in hover:shadow-lg mobile-card ${pjrName ? 'schedule-card hover:scale-105 hover:border-red-500' : ''}"
                onclick="${clickEvent}" ${pjrName ? 'role="button" tabindex="0"' : ''}>
               <div class="mb-2 md:mb-3">
                   <h3 class="font-bold text-gray-800 dark:text-white text-left text-xs md:text-sm leading-tight">${labName}</h3>
@@ -180,7 +176,7 @@ function createScheduleCard(labName, pjrName, isToday = false, date) {
 }
 
 function updateScheduleDisplay() {
-    if (!labData) return; 
+    if (!labData) return;
 
     document.getElementById('schedule-view').classList.remove('hidden');
     document.getElementById('loading-spinner').classList.add('hidden');
@@ -191,7 +187,7 @@ function updateScheduleDisplay() {
 
     const today = new Date();
     today.setHours(0,0,0,0);
-    
+
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
 
@@ -200,14 +196,14 @@ function updateScheduleDisplay() {
 
     const firstDayNormalized = new Date(firstDay);
     firstDayNormalized.setHours(0,0,0,0);
-    
+
     const secondDayNormalized = new Date(secondDay);
     secondDayNormalized.setHours(0,0,0,0);
 
     const isFirstDayToday = firstDayNormalized.getTime() === today.getTime();
     const isFirstDayTomorrow = firstDayNormalized.getTime() === tomorrow.getTime();
     const isFirstDayDayAfterTomorrow = firstDayNormalized.getTime() === dayAfterTomorrow.getTime();
-    
+
     const isSecondDayToday = secondDayNormalized.getTime() === today.getTime();
     const isSecondDayTomorrow = secondDayNormalized.getTime() === tomorrow.getTime();
     const isSecondDayDayAfterTomorrow = secondDayNormalized.getTime() === dayAfterTomorrow.getTime();
@@ -225,9 +221,9 @@ function updateScheduleDisplay() {
 
     firstDayContainer.className = 'bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 md:p-6 border-l-4';
     secondDayContainer.className = 'bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 md:p-6 border-l-4';
-    
+
     const badgeClasses = "px-2 md:px-3 py-1 rounded-full text-xs md:text-sm sm:mr-3 self-start";
-    
+
     if (isFirstDayToday) {
         firstBadge.textContent = 'HARI INI';
         firstBadge.className = `bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 ${badgeClasses}`;
@@ -366,13 +362,13 @@ function hideModal(modalId) {
     modal.querySelector('.transform').classList.add('scale-95');
     setTimeout(() => {
         modal.classList.add('pointer-events-none');
-        const anyModalOpen = 
+        const anyModalOpen =
             !document.getElementById('notification-modal').classList.contains('opacity-0') ||
             !document.getElementById('limit-alert-modal').classList.contains('opacity-0') ||
             !document.getElementById('prev-limit-modal').classList.contains('opacity-0') ||
             !document.getElementById('course-schedule-modal').classList.contains('opacity-0') ||
             !document.getElementById('search-modal').classList.contains('opacity-0');
-        
+
         if (!anyModalOpen) {
             document.body.style.overflow = '';
         }
@@ -385,13 +381,25 @@ function showPrevLimitModal() { showModal('prev-limit-modal'); }
 function hidePrevLimitModal() { hideModal('prev-limit-modal'); }
 function showCourseModal() { showModal('course-schedule-modal'); }
 function hideCourseModal() { hideModal('course-schedule-modal'); }
-function showSearchModal() { showModal('search-modal'); }
-function hideSearchModal() { hideModal('search-modal'); }
+
+// === PERUBAHAN: Fungsi Modal Pencarian ===
+function showSearchModal() {
+    showModal('search-modal');
+    // Pindahkan fokus ke input di dalam modal
+    document.getElementById('search-modal-query-input').focus();
+}
+function hideSearchModal() {
+    hideModal('search-modal');
+    // Pindahkan fokus kembali ke input utama
+    document.getElementById('search-input').focus();
+}
+// === AKHIR PERUBAHAN ===
+
 
 function showCourseSchedule(labName, isoDate) {
     const date = new Date(isoDate);
     const namaHari = NAMA_HARI[date.getDay()].toLowerCase();
-    
+
     const jadwalTersaring = schedulesByDayAndRoom[namaHari][labName.trim()] || [];
 
     const titleEl = document.getElementById('modal-lab-title');
@@ -426,11 +434,11 @@ function showCourseSchedule(labName, isoDate) {
     showCourseModal();
 }
 
-function displaySearchResults(results, query) {
+// === PERUBAHAN: Logika Pencarian Diperbarui ===
+
+// Fungsi ini HANYA me-render hasil, tidak lebih
+function displaySearchResults(results) {
     const contentEl = document.getElementById('search-modal-content');
-    const queryEl = document.getElementById('search-modal-query');
-    
-    queryEl.textContent = `Hasil pencarian untuk: "${query}"`;
 
     if (results.length === 0) {
         contentEl.innerHTML = `
@@ -439,7 +447,6 @@ function displaySearchResults(results, query) {
                 <p class="text-gray-500 dark:text-gray-400 font-medium">Tidak ada jadwal ditemukan.</p>
             </div>
         `;
-        showSearchModal();
         return;
     }
 
@@ -458,8 +465,8 @@ function displaySearchResults(results, query) {
     });
 
     sortedDays.forEach(hari => {
-        contentHTML += `<div><h3 class="search-result-group">${hari}</h3><div class="space-y-3 mt-3">`; 
-        
+        contentHTML += `<div><h3 class="search-result-group">${hari}</h3><div class="space-y-3 mt-3">`;
+
         groupedResults[hari].forEach(item => {
             contentHTML += `
                 <div class="search-result-item">
@@ -467,23 +474,23 @@ function displaySearchResults(results, query) {
                     <p class="text-sm text-gray-700 dark:text-gray-300"><span class="font-medium">Dosen:</span> ${item.DOSEN_PENGAMPU}</p>
                     <div class="flex justify-between items-center mt-2">
                         <span class="text-sm text-gray-500 dark:text-gray-400 font-medium">${formatJam(item.JAM_MULAI)} - ${formatJam(item.JAM_SELESAI)}</span>
-                        <span class="text-sm font-semibold text-green-600 dark:text-green-500">${item.RUANG}</span>
+                        <span class="font-semibold text-green-600 dark:text-green-500">${item.RUANG}</span>
                     </div>
                 </div>
             `;
         });
-        
+
         contentHTML += `</div></div>`;
     });
 
     contentHTML += '</div>';
     contentEl.innerHTML = contentHTML;
-    showSearchModal();
 }
 
+// Fungsi ini menangani logika pencarian
 function handleSearch(query) {
     const normalizedQuery = query.toLowerCase().trim();
-    
+
     if (normalizedQuery.length < 3) {
         hideModal('search-modal'); // Sembunyikan jika query terlalu pendek
         return;
@@ -497,29 +504,32 @@ function handleSearch(query) {
                (item.KELAS?.toLowerCase() || '').includes(normalizedQuery);
     });
 
-    displaySearchResults(results, normalizedQuery);
+    displaySearchResults(results);
     showSearchModal();
 }
 
+// Fungsi ini menyinkronkan kedua input
 function syncSearchInputs(event) {
     const query = event.target.value;
-    
+
+    // Update input yang *lain*
     if (event.target.id === 'search-input') {
         document.getElementById('search-modal-query-input').value = query;
     } else {
         document.getElementById('search-input').value = query;
     }
-    
+
+    // Jalankan pencarian
     handleSearch(query);
 }
+// === AKHIR LOGIKA PENCARIAN ===
+
 
 // --- INISIALISASI APLIKASI ---
 
 document.addEventListener('DOMContentLoaded', async function() {
     try {
-        // === PERBAIKAN: Cache-busting untuk data.json ===
-        // Ini memastikan data hari libur & jadwal PJR terbaru selalu dimuat
-        const response = await fetch('data.json?v=' + new Date().getTime()); 
+        const response = await fetch('data.json?v=' + new Date().getTime());
 
         if (!response.ok) {
             throw new Error(`Gagal memuat data: ${response.statusText}`);
@@ -538,7 +548,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         courseSchedule.forEach(item => {
             const hari = item.HARI ? item.HARI.toLowerCase() : '';
             const ruang = item.RUANG ? item.RUANG.trim() : '';
-            if (!hari || !ruang) return; 
+            if (!hari || !ruang) return;
             if (!schedulesByDayAndRoom[hari]) {
                 schedulesByDayAndRoom[hari] = {};
             }
@@ -556,34 +566,37 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
 
         showModal('notification-modal');
-        
+
         currentViewDate = new Date();
         currentViewDate.setHours(0, 0, 0, 0);
-        
+
         updateScheduleDisplay();
 
+        // === EVENT LISTENERS ===
         document.getElementById('prev-btn').addEventListener('click', goToPreviousDay);
         document.getElementById('next-btn').addEventListener('click', goToNextDay);
         document.getElementById('today-btn').addEventListener('click', goToToday);
-        
+
+        // Modal Listeners
         document.getElementById('modal-close-btn').addEventListener('click', () => hideModal('notification-modal'));
         document.getElementById('limit-modal-close-btn').addEventListener('click', hideLimitModal);
         document.getElementById('prev-limit-modal-close-btn').addEventListener('click', hidePrevLimitModal);
         document.getElementById('course-modal-close-btn').addEventListener('click', hideCourseModal);
         document.getElementById('course-modal-close-btn-x').addEventListener('click', hideCourseModal);
-        
-        // === Listener untuk Input Pencarian ===
-        document.getElementById('search-input').addEventListener('input', syncSearchInputs);
-        document.getElementById('search-modal-query-input').addEventListener('input', syncSearchInputs);
-        
         document.getElementById('search-modal-close-btn').addEventListener('click', hideSearchModal);
         document.getElementById('search-modal-close-btn-x').addEventListener('click', hideSearchModal);
-        
+
+        // === PERUBAHAN: Listener untuk kedua input pencarian ===
+        document.getElementById('search-input').addEventListener('input', syncSearchInputs);
+        document.getElementById('search-modal-query-input').addEventListener('input', syncSearchInputs);
+
+        // Listener untuk menutup modal saat input utama dikosongkan
         document.getElementById('search-input').addEventListener('search', (e) => {
             if (e.target.value === '') {
                 hideSearchModal();
             }
         });
+        // === AKHIR PERUBAHAN ===
 
         document.addEventListener('keydown', function(event) {
             if (event.key === 'Escape') {
@@ -595,6 +608,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             }
         });
 
+        // FAB Listeners
         const fabButton = document.getElementById('fab-button');
         const fabPopup = document.getElementById('fab-popup');
         const fabCloseBtn = document.getElementById('fab-close-btn');
@@ -608,7 +622,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                 fabPopup.classList.toggle('pointer-events-none');
             });
         }
-        
+
         if (fabCloseBtn) {
             fabCloseBtn.addEventListener('click', () => {
                 fabPopup.classList.add('opacity-0');
@@ -618,8 +632,8 @@ document.addEventListener('DOMContentLoaded', async function() {
                 fabPopup.classList.add('pointer-events-none');
             });
         }
-        
-        // === LOGIKA DARK MODE (DEFAULT KE LIGHT) ===
+
+        // Dark Mode Logic (Default Light)
         const toggleBtn = document.getElementById('dark-mode-toggle');
         const sunIcon = document.getElementById('sun-icon');
         const moonIcon = document.getElementById('moon-icon');
@@ -641,13 +655,12 @@ document.addEventListener('DOMContentLoaded', async function() {
         if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
             setDarkMode(true);
         } else {
-            setDarkMode(false); // Default ke light
+            setDarkMode(false);
         }
 
         toggleBtn.addEventListener('click', () => {
             setDarkMode(!document.documentElement.classList.contains('dark'));
         });
-        // === AKHIR LOGIKA DARK MODE ===
 
     } catch (error) {
         console.error('Error memuat data jadwal:', error);
