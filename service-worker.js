@@ -13,7 +13,7 @@ const CORE_FILES = [
 ];
 
 // 1. Saat Service Worker di-install
-self.addEventListener('install', (event) => {
+self.addEventListener('install Aplikasi', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       console.log('Service Worker: Caching core files (v7)...');
