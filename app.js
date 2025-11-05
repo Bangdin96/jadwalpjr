@@ -5,6 +5,7 @@ let holidays;
 let specialSchedules;
 let courseSchedule;
 let schedulesByDayAndRoom = {};
+let deferredPrompt; // Variabel untuk menyimpan event install
 
 let currentViewDate = new Date();
 
@@ -143,10 +144,7 @@ function createScheduleCard(labName, pjrName, isToday = false, date) {
     let displayJabatan = 'Penanggung Jawab';
     if (pjrName && staffDetails[pjrName]) {
         const details = staffDetails[pjrName];
-        // === PERUBAHAN DI SINI ===
-        // Menghapus ?v=${new Date().getTime()} agar gambar di-cache
         photoPath = details.photo ? `images/${details.photo}` : null;
-        // === AKHIR PERUBAHAN ===
         initials = getInitials(pjrName);
         displayJabatan = details.jabatan || 'Staf';
     } else if (pjrName) {
@@ -365,12 +363,15 @@ function hideModal(modalId) {
     modal.querySelector('.transform').classList.add('scale-95');
     setTimeout(() => {
         modal.classList.add('pointer-events-none');
+        // === PERUBAHAN DI SINI ===
+        // Menghapus referensi ke #install-prompt-modal yang sudah tidak ada
         const anyModalOpen =
             !document.getElementById('notification-modal').classList.contains('opacity-0') ||
             !document.getElementById('limit-alert-modal').classList.contains('opacity-0') ||
             !document.getElementById('prev-limit-modal').classList.contains('opacity-0') ||
             !document.getElementById('course-schedule-modal').classList.contains('opacity-0') ||
             !document.getElementById('search-modal').classList.contains('opacity-0');
+        // === AKHIR PERUBAHAN ===
 
         if (!anyModalOpen) {
             document.body.style.overflow = '';
@@ -532,10 +533,7 @@ function syncSearchInputs(event) {
 
 document.addEventListener('DOMContentLoaded', async function() {
     try {
-        // === PERUBAHAN DI SINI ===
-        // Menghapus ?v=... agar service-worker bisa meng-cache
         const response = await fetch('data.json');
-        // === AKHIR PERUBAHAN ===
 
         if (!response.ok) {
             throw new Error(`Gagal memuat data: ${response.statusText}`);
@@ -611,8 +609,73 @@ document.addEventListener('DOMContentLoaded', async function() {
                 hidePrevLimitModal();
                 hideCourseModal();
                 hideSearchModal();
+                // === PERUBAHAN ===
+                // Menghapus referensi ke modal install yang lama
+                // === AKHIR PERUBAHAN ===
             }
         });
+
+
+        // === BLOK KODE BARU DITAMBAHKAN DI SINI ===
+        // --- Logika Tombol Install PWA ---
+        const installBtnContainer = document.getElementById('install-button-container');
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            // 1. Cek jika sudah di mode standalone (sudah terinstall)
+            if (window.matchMedia('(display-mode: standalone)').matches) {
+                return; // Jangan tampilkan tombol jika sudah diinstall
+            }
+
+            // 2. Cegah prompt bawaan browser
+            e.preventDefault();
+
+            // 3. Simpan event-nya agar bisa kita panggil nanti
+            deferredPrompt = e;
+            console.log('beforeinstallprompt event ditangkap, tombol install akan ditampilkan.');
+
+            // 4. Tampilkan tombol install kustom kita
+            if (installBtnContainer) {
+                installBtnContainer.classList.remove('hidden');
+            }
+        });
+
+        // Tambahkan listener untuk tombol "Install Aplikasi" baru
+        const installAppBtn = document.getElementById('install-app-btn');
+        if (installAppBtn) {
+            installAppBtn.addEventListener('click', async () => {
+                if (deferredPrompt) {
+                    // Tampilkan prompt instalasi bawaan browser
+                    deferredPrompt.prompt();
+
+                    // Tunggu respons dari user
+                    const { outcome } = await deferredPrompt.userChoice;
+
+                    if (outcome === 'accepted') {
+                        console.log('User menerima instalasi');
+                        // Sembunyikan tombol setelah instalasi diterima
+                        installBtnContainer.classList.add('hidden');
+                    } else {
+                        console.log('User menolak instalasi (browser prompt)');
+                    }
+
+                    // Kosongkan variabel, karena prompt hanya bisa dipakai sekali
+                    deferredPrompt = null;
+                }
+            });
+        }
+
+        // Listener jika aplikasi berhasil di-install
+        window.addEventListener('appinstalled', () => {
+            console.log('Aplikasi berhasil di-install!');
+            // Sembunyikan tombol instalasi
+            if (installBtnContainer) {
+                installBtnContainer.classList.add('hidden');
+            }
+            deferredPrompt = null;
+        });
+        // --- Akhir Logika Tombol Install PWA ---
+        // === AKHIR BLOK KODE BARU ===
+
 
         // FAB Listeners
         const fabButton = document.getElementById('fab-button');
