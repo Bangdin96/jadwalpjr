@@ -63,14 +63,14 @@
         </button>
       </div>
 
-      <div class="flex flex-col md:flex-row justify-between items-center gap-4 mt-3 md:mt-4">
-          <div class="w-full md:w-auto">
-              <button id="today-btn" class="px-3 md:px-4 py-2.5 bg-red-700 hover:bg-red-800 text-white rounded-lg transition-colors text-xs md:text-sm mobile-nav-btn w-full">
+      <div class="flex flex-row md:flex-row justify-between items-center gap-4 mt-3 md:mt-4">
+          <div class="w-auto">
+              <button id="today-btn" class="px-3 md:px-4 py-2.5 bg-red-700 hover:bg-red-800 text-white rounded-lg transition-colors text-xs md:text-sm mobile-nav-btn">
                 Kembali ke Hari Ini
               </button>
           </div>
 
-          <div class="relative w-full md:flex-1">
+          <div class="relative w-full flex-1">
               <input type="search" id="search-input" placeholder="Cari Dosen, Mata Kuliah, atau Kelas..."
                      class="w-full p-2.5 pl-10 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500">
               <svg class="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -78,7 +78,7 @@
               </svg>
           </div>
 
-          <div id="install-button-container" class="w-full md:w-auto hidden"> <button id="install-app-btn" class="w-full flex items-center justify-center gap-2 px-3 md:px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors text-xs md:text-sm mobile-nav-btn">
+          <div id="install-button-container" class="w-auto hidden"> <button id="install-app-btn" class="flex items-center justify-center gap-2 px-3 md:px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors text-xs md:text-sm mobile-nav-btn">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
                 </svg>
@@ -232,6 +232,7 @@
         </div>
     </div>
   </div>
+
 
   <div id="fab-container" class="fixed bottom-6 right-6 z-40">
     <div id="fab-popup" class="absolute bottom-20 right-0 mb-2 w-64 bg-white dark:bg-gray-800 rounded-lg shadow-xl p-4 transition-all duration-300 origin-bottom-right transform scale-95 opacity-0 pointer-events-none border dark:border-gray-700">

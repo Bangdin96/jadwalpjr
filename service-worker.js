@@ -1,5 +1,5 @@
-// PERUBAHAN TUNGGAL ADA DI BARIS INI
-const CACHE_NAME = 'jadwal-pjr-cache-v3';
+// PERUBAHAN TUNGGAL ADA DI BARIS INI (v4 menjadi v5)
+const CACHE_NAME = 'jadwal-pjr-cache-v5';
 // Daftar file inti yang akan disimpan
 const CORE_FILES = [
   '.',
@@ -16,7 +16,7 @@ const CORE_FILES = [
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      console.log('Service Worker: Caching core files (v3)...');
+      console.log('Service Worker: Caching core files (v5)...');
       return cache.addAll(CORE_FILES);
     })
   );
@@ -49,7 +49,7 @@ self.addEventListener('fetch', (event) => {
   // Selalu coba ambil data terbaru. Jika gagal (offline), ambil dari cache.
   if (requestUrl.pathname.endsWith('data.json')) {
     event.respondWith(
-      caches.open(CACHE_NAME).then((cache) => {
+      caches.open(CACHE_NAME).then((cache).
         return fetch(event.request)
           .then((networkResponse) => {
             // Berhasil dapat data baru, simpan ke cache
