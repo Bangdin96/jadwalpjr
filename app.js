@@ -143,7 +143,10 @@ function createScheduleCard(labName, pjrName, isToday = false, date) {
     let displayJabatan = 'Penanggung Jawab';
     if (pjrName && staffDetails[pjrName]) {
         const details = staffDetails[pjrName];
-        photoPath = details.photo ? `images/${details.photo}?v=${new Date().getTime()}` : null;
+        // === PERUBAHAN DI SINI ===
+        // Menghapus ?v=${new Date().getTime()} agar gambar di-cache
+        photoPath = details.photo ? `images/${details.photo}` : null;
+        // === AKHIR PERUBAHAN ===
         initials = getInitials(pjrName);
         displayJabatan = details.jabatan || 'Staf';
     } else if (pjrName) {
@@ -529,7 +532,10 @@ function syncSearchInputs(event) {
 
 document.addEventListener('DOMContentLoaded', async function() {
     try {
-        const response = await fetch('data.json?v=' + new Date().getTime());
+        // === PERUBAHAN DI SINI ===
+        // Menghapus ?v=... agar service-worker bisa meng-cache
+        const response = await fetch('data.json');
+        // === AKHIR PERUBAHAN ===
 
         if (!response.ok) {
             throw new Error(`Gagal memuat data: ${response.statusText}`);
