@@ -381,8 +381,20 @@ function showPrevLimitModal() { showModal('prev-limit-modal'); }
 function hidePrevLimitModal() { hideModal('prev-limit-modal'); }
 function showCourseModal() { showModal('course-schedule-modal'); }
 function hideCourseModal() { hideModal('course-schedule-modal'); }
-function showSearchModal() { showModal('search-modal'); }
-function hideSearchModal() { hideModal('search-modal'); }
+
+// === PERUBAHAN: Fungsi Modal Pencarian ===
+function showSearchModal() {
+    showModal('search-modal');
+    // Pindahkan fokus ke input di dalam modal
+    document.getElementById('search-modal-query-input').focus();
+}
+function hideSearchModal() {
+    hideModal('search-modal');
+    // Pindahkan fokus kembali ke input utama
+    document.getElementById('search-input').focus();
+}
+// === AKHIR PERUBAHAN ===
+
 
 function showCourseSchedule(labName, isoDate) {
     const date = new Date(isoDate);
@@ -422,11 +434,11 @@ function showCourseSchedule(labName, isoDate) {
     showCourseModal();
 }
 
-function displaySearchResults(results, query) {
-    const contentEl = document.getElementById('search-modal-content');
-    const queryEl = document.getElementById('search-modal-query');
+// === PERUBAHAN: Logika Pencarian Diperbarui ===
 
-    queryEl.textContent = `Hasil pencarian untuk: "${query}"`;
+// Fungsi ini HANYA me-render hasil, tidak lebih
+function displaySearchResults(results) {
+    const contentEl = document.getElementById('search-modal-content');
 
     if (results.length === 0) {
         contentEl.innerHTML = `
@@ -435,7 +447,6 @@ function displaySearchResults(results, query) {
                 <p class="text-gray-500 dark:text-gray-400 font-medium">Tidak ada jadwal ditemukan.</p>
             </div>
         `;
-        showSearchModal();
         return;
     }
 
@@ -463,7 +474,7 @@ function displaySearchResults(results, query) {
                     <p class="text-sm text-gray-700 dark:text-gray-300"><span class="font-medium">Dosen:</span> ${item.DOSEN_PENGAMPU}</p>
                     <div class="flex justify-between items-center mt-2">
                         <span class="text-sm text-gray-500 dark:text-gray-400 font-medium">${formatJam(item.JAM_MULAI)} - ${formatJam(item.JAM_SELESAI)}</span>
-                        <span class="text-sm font-semibold text-green-600 dark:text-green-500">${item.RUANG}</span>
+                        <span class="font-semibold text-green-600 dark:text-green-500">${item.RUANG}</span>
                     </div>
                 </div>
             `;
@@ -474,23 +485,45 @@ function displaySearchResults(results, query) {
 
     contentHTML += '</div>';
     contentEl.innerHTML = contentHTML;
+}
+
+// Fungsi ini menangani logika pencarian
+function handleSearch(query) {
+    const normalizedQuery = query.toLowerCase().trim();
+
+    if (normalizedQuery.length < 3) {
+        hideModal('search-modal'); // Sembunyikan jika query terlalu pendek
+        return;
+    }
+
+    if (!courseSchedule) return; // Data belum siap
+
+    const results = courseSchedule.filter(item => {
+        return (item.MATA_KULIAH?.toLowerCase() || '').includes(normalizedQuery) ||
+               (item.DOSEN_PENGAMPU?.toLowerCase() || '').includes(normalizedQuery) ||
+               (item.KELAS?.toLowerCase() || '').includes(normalizedQuery);
+    });
+
+    displaySearchResults(results);
     showSearchModal();
 }
 
-function handleSearch(event) {
-    const query = event.target.value.toLowerCase().trim();
-    if (query.length < 3) {
-        hideSearchModal();
-        return;
+// Fungsi ini menyinkronkan kedua input
+function syncSearchInputs(event) {
+    const query = event.target.value;
+
+    // Update input yang *lain*
+    if (event.target.id === 'search-input') {
+        document.getElementById('search-modal-query-input').value = query;
+    } else {
+        document.getElementById('search-input').value = query;
     }
-    if (!courseSchedule) return;
-    const results = courseSchedule.filter(item => {
-        return (item.MATA_KULIAH?.toLowerCase() || '').includes(query) ||
-               (item.DOSEN_PENGAMPU?.toLowerCase() || '').includes(query) ||
-               (item.KELAS?.toLowerCase() || '').includes(query);
-    });
-    displaySearchResults(results, query);
+
+    // Jalankan pencarian
+    handleSearch(query);
 }
+// === AKHIR LOGIKA PENCARIAN ===
+
 
 // --- INISIALISASI APLIKASI ---
 
@@ -539,19 +572,31 @@ document.addEventListener('DOMContentLoaded', async function() {
 
         updateScheduleDisplay();
 
+        // === EVENT LISTENERS ===
         document.getElementById('prev-btn').addEventListener('click', goToPreviousDay);
         document.getElementById('next-btn').addEventListener('click', goToNextDay);
         document.getElementById('today-btn').addEventListener('click', goToToday);
 
+        // Modal Listeners
         document.getElementById('modal-close-btn').addEventListener('click', () => hideModal('notification-modal'));
         document.getElementById('limit-modal-close-btn').addEventListener('click', hideLimitModal);
         document.getElementById('prev-limit-modal-close-btn').addEventListener('click', hidePrevLimitModal);
         document.getElementById('course-modal-close-btn').addEventListener('click', hideCourseModal);
         document.getElementById('course-modal-close-btn-x').addEventListener('click', hideCourseModal);
-
-        document.getElementById('search-input').addEventListener('input', handleSearch);
         document.getElementById('search-modal-close-btn').addEventListener('click', hideSearchModal);
         document.getElementById('search-modal-close-btn-x').addEventListener('click', hideSearchModal);
+
+        // === PERUBAHAN: Listener untuk kedua input pencarian ===
+        document.getElementById('search-input').addEventListener('input', syncSearchInputs);
+        document.getElementById('search-modal-query-input').addEventListener('input', syncSearchInputs);
+
+        // Listener untuk menutup modal saat input utama dikosongkan
+        document.getElementById('search-input').addEventListener('search', (e) => {
+            if (e.target.value === '') {
+                hideSearchModal();
+            }
+        });
+        // === AKHIR PERUBAHAN ===
 
         document.addEventListener('keydown', function(event) {
             if (event.key === 'Escape') {
@@ -563,6 +608,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             }
         });
 
+        // FAB Listeners
         const fabButton = document.getElementById('fab-button');
         const fabPopup = document.getElementById('fab-popup');
         const fabCloseBtn = document.getElementById('fab-close-btn');
@@ -587,7 +633,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             });
         }
 
-        // === LOGIKA DARK MODE (DEFAULT KE LIGHT) ===
+        // Dark Mode Logic (Default Light)
         const toggleBtn = document.getElementById('dark-mode-toggle');
         const sunIcon = document.getElementById('sun-icon');
         const moonIcon = document.getElementById('moon-icon');
@@ -606,17 +652,15 @@ document.addEventListener('DOMContentLoaded', async function() {
             }
         };
 
-        // Cek tema yang tersimpan. Jika tidak ada, cek preferensi OS.
         if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
             setDarkMode(true);
         } else {
-            setDarkMode(false); // Default ke light
+            setDarkMode(false);
         }
 
         toggleBtn.addEventListener('click', () => {
             setDarkMode(!document.documentElement.classList.contains('dark'));
         });
-        // === AKHIR LOGIKA DARK MODE ===
 
     } catch (error) {
         console.error('Error memuat data jadwal:', error);
