@@ -1,5 +1,5 @@
-// PERUBAHAN TUNGGAL ADA DI BARIS INI (v8 menjadi v9)
-const CACHE_NAME = 'jadwal-pjr-cache-v9';
+// PERUBAHAN TUNGGAL ADA DI BARIS INI (v9 menjadi v10)
+const CACHE_NAME = 'jadwal-pjr-cache-v10';
 // Daftar file inti yang akan disimpan
 const CORE_FILES = [
   '.',
@@ -16,7 +16,7 @@ const CORE_FILES = [
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      console.log('Service Worker: Caching core files (v9)...');
+      console.log('Service Worker: Caching core files (v10)...');
       return cache.addAll(CORE_FILES);
     })
   );
