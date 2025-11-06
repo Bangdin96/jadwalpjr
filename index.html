@@ -19,7 +19,8 @@
 
   <link rel="manifest" href="manifest.json">
   <link rel="stylesheet" href="style.css">
-  <script src="app.js" defer></script>
+
+  <script type="module" src="app.js" defer></script>
 
   <style>@view-transition { navigation: auto; }</style>
 </head>
@@ -37,6 +38,7 @@
           Total Kunjungan: <span id="total-visits" class="font-bold">...</span> |
           Hari Ini: <span id="today-visits" class="font-bold">...</span>
         </p>
+
         </div>
 
       <button id="dark-mode-toggle" class="absolute top-4 right-4 p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none">

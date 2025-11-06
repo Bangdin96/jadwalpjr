@@ -1,5 +1,5 @@
-// PERUBAHAN TUNGGAL ADA DI BARIS INI (v11 menjadi v12)
-const CACHE_NAME = 'jadwal-pjr-cache-v12';
+// PERUBAHAN TUNGGAL ADA DI BARIS INI (v12 menjadi v13)
+const CACHE_NAME = 'jadwal-pjr-cache-v13';
 // Daftar file inti yang akan disimpan
 const CORE_FILES = [
   '.',
@@ -16,7 +16,7 @@ const CORE_FILES = [
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      console.log('Service Worker: Caching core files (v12)...');
+      console.log('Service Worker: Caching core files (v13)...');
       return cache.addAll(CORE_FILES);
     })
   );
@@ -45,7 +45,16 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const requestUrl = new URL(event.request.url);
 
-  // Strategi 1: Untuk data.json (Network First, then Cache, TAPI DIPAKSA)
+  // === PERUBAHAN DI SINI ===
+
+  // Strategi 1: (BARU) Abaikan semua permintaan ke Firebase/Google APIs
+  // Ini PENTING agar statistik Firebase berfungsi.
+  if (requestUrl.hostname.includes('firebase') || requestUrl.hostname.includes('googleapis.com')) {
+    event.respondWith(fetch(event.request));
+    return;
+  }
+
+  // Strategi 2: Untuk data.json (Network First, then Cache, TAPI DIPAKSA)
   if (requestUrl.pathname.endsWith('data.json')) {
     event.respondWith(
       caches.open(CACHE_NAME).then((cache) => {
@@ -63,13 +72,8 @@ self.addEventListener('fetch', (event) => {
     );
     return;
   }
+  // === AKHIR PERUBAHAN ===
 
-  // Strategi 2: (BARU) Untuk counter.php (Network Only, JANGAN DI-CACHE)
-  if (requestUrl.pathname.endsWith('counter.php')) {
-    // Langsung ambil dari network, jangan simpan ke cache
-    event.respondWith(fetch(event.request, { cache: 'no-store' }));
-    return;
-  }
 
   // Strategi 3: Untuk semua file lain (Cache First, then Network)
   event.respondWith(

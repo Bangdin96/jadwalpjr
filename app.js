@@ -1,3 +1,7 @@
+// === PERUBAHAN 1: IMPORT FIREBASE (GAYA MODULAR v9+) ===
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js";
+import { getFirestore, doc, updateDoc, increment, getDoc } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
+
 // Variabel Global untuk data
 let labData;
 let staffDetails;
@@ -65,35 +69,65 @@ function createTagHTML(appString) {
     return html;
 }
 
-// --- FUNGSI STATISTIK PENGUNJUNG ---
+// === PERUBAHAN 2: INISIALISASI FIREBASE (v9+) ===
+// Gunakan config yang Anda berikan
+const firebaseConfig = {
+    apiKey: "AIzaSyCSx-SqVK7BJkIknw-oEMJ0w6u5BgCBL5k",
+    authDomain: "jadwal-pjr-app.firebaseapp.com",
+    projectId: "jadwal-pjr-app",
+    storageBucket: "jadwal-pjr-app.firebasestorage.app",
+    messagingSenderId: "548239147655",
+    appId: "1:548239147655:web:254b212ddad5298bfe2e22"
+};
+
+// Inisialisasi Firebase dan Firestore
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+// Fungsi Statistik Baru (v9+)
 async function fetchVisitorStats() {
+    // Referensi ke dokumen di Firestore
+    const statsRef = doc(db, 'stats', 'visits');
+    // Dapatkan tanggal hari ini (e.g., "2025-11-06")
+    const todayDate = getLocalDateString(new Date());
+
     try {
-        // 'no-store' penting agar tidak di-cache oleh browser
-        const response = await fetch('counter.php', { cache: 'no-store' });
-        if (!response.ok) throw new Error('Network response was not ok');
+        // 1. Update data di server (increment)
+        // Ini akan menambah 1 ke 'total'
+        // dan menambah 1 ke 'daily.<tanggal_hari_ini>'
+        await updateDoc(statsRef, {
+            total: increment(1),
+            [`daily.${todayDate}`]: increment(1)
+        });
 
-        const stats = await response.json();
+        // 2. Ambil data yang SUDAH di-update untuk ditampilkan
+        const docSnap = await getDoc(statsRef);
 
-        // Update HTML
-        const totalEl = document.getElementById('total-visits');
-        const todayEl = document.getElementById('today-visits');
+        if (docSnap.exists()) {
+            const data = docSnap.data();
+            const totalEl = document.getElementById('total-visits');
+            const todayEl = document.getElementById('today-visits');
 
-        if (totalEl) totalEl.textContent = stats.total.toLocaleString('id-ID');
-        if (todayEl) todayEl.textContent = stats.today.toLocaleString('id-ID');
-
+            if (totalEl) totalEl.textContent = (data.total || 1).toLocaleString('id-ID');
+            // Ambil data harian dari dalam map 'daily'
+            if (todayEl) todayEl.textContent = (data.daily[todayDate] || 1).toLocaleString('id-ID');
+        } else {
+            console.error("Dokumen 'stats/visits' tidak ditemukan di Firebase! (Pastikan Anda mengikuti Langkah 2)");
+        }
     } catch (error) {
-        // Jika offline, sembunyikan statistik
-        console.warn('Gagal memuat statistik (mungkin offline):', error);
+        console.error("Error dengan Firebase:", error);
+        // Tampilkan N/A jika gagal (misalnya offline)
         const totalEl = document.getElementById('total-visits');
         const todayEl = document.getElementById('today-visits');
         if (totalEl) totalEl.textContent = 'N/A';
         if (todayEl) todayEl.textContent = 'N/A';
     }
 }
+// === AKHIR PERUBAHAN 2 ===
 
 
 // --- FUNGSI LOGIKA TANGGAL ---
-
+// ... (isHoliday, isWeekend, isWorkingDay, getWorkingDaySequence TIDAK BERUBAH) ...
 function isHoliday(date) {
     const dateStr = getLocalDateString(date);
     return holidays && holidays.some(holiday => holiday.date === dateStr);
@@ -141,40 +175,30 @@ function getWorkingDaySequence(targetDate) {
     }
 }
 
-// --- FUNGSI INTI APLIKASI ---
 
-/**
- * Mendapatkan nama PJR yang bertugas di lab pada tanggal tertentu,
- * dengan memprioritaskan Jadwal Prioritas berbasis TANGGAL.
- */
+// --- FUNGSI INTI APLIKASI ---
+// ... (getPJRForDate, createScheduleCard, updateScheduleDisplay, dll... TIDAK BERUBAH) ...
 function getPJRForDate(labName, date) {
     const dateStr = getLocalDateString(date);
     const namaHari = NAMA_HARI[date.getDay()];
     const namaHariLower = namaHari.toLowerCase();
 
-    // Cek dulu apakah hari ini hari kerja atau hari libur
     const isTodayAWorkingDay = isWorkingDay(date);
 
     // 1. Cek Jadwal Prioritas berbasis TANGGAL
     const scheduleGroup = schedulesByDayAndRoom[namaHariLower]?.[labName.trim()];
 
     if (scheduleGroup && scheduleGroup.priority.length > 0) {
-        // Filter jadwal prioritas yang benar-benar jatuh pada TANGGAL ini
         const validPriorities = scheduleGroup.priority.filter(item => item.TANGGAL === dateStr);
-
         if (validPriorities.length > 0) {
-            // Cek apakah ada PJR_SPECIAL yang ditunjuk
             const priorityPJR = validPriorities.find(item => item.PJR_SPECIAL && item.PJR_SPECIAL.trim() !== '');
-
-            // HANYA gunakan PJR Spesial JIKA HARI INI BUKAN HARI KERJA (Sabtu/Minggu/Libur)
             if (priorityPJR && !isTodayAWorkingDay) {
-                // PJR Spesial mengambil alih karena ini hari libur
                 return priorityPJR.PJR_SPECIAL;
             }
         }
     }
 
-    // 2. Cek Jadwal Spesial Rotasi (dari array 'specialSchedules')
+    // 2. Cek Jadwal Spesial Rotasi
     if (specialSchedules) {
         const special = specialSchedules.find(s => s.date === dateStr);
         if (special) {
@@ -182,8 +206,8 @@ function getPJRForDate(labName, date) {
         }
     }
 
-    // 3. Rotasi Harian Normal (Hanya jika Hari Kerja)
-    if (isTodayAWorkingDay) { // Menggunakan variabel yang sudah disimpan
+    // 3. Rotasi Harian Normal
+    if (isTodayAWorkingDay) {
         const pjrList = labData[labName];
         const pjrCount = pjrList.length;
         const workingDaySeq = getWorkingDaySequence(date);
@@ -191,8 +215,7 @@ function getPJRForDate(labName, date) {
         return pjrList[pjrIndex];
     }
 
-    // 4. Jika Libur (Weekend/Holiday) dan tidak ada Prioritas Spesial yang berlaku
-    return null; // Libur, tidak ada PJR
+    return null;
 }
 
 function createScheduleCard(labName, pjrName, isToday = false, date) {
@@ -214,7 +237,6 @@ function createScheduleCard(labName, pjrName, isToday = false, date) {
         displayJabatan = 'Staf';
     }
 
-    // Jika pjrName tidak null, aktifkan klik
     const clickEvent = pjrName ? `showCourseSchedule('${labName}', '${date.toISOString()}')` : `event.stopPropagation()`;
 
     return `
@@ -331,7 +353,6 @@ function updateScheduleDisplay() {
     const firstContainer = document.getElementById('first-day-schedule');
     let firstHTML = '';
 
-    // Cek PJR di lab manapun untuk menentukan apakah ada PJR yang bertugas (baik dari rotasi maupun prioritas)
     const pjrListFirstDay = Object.keys(labData).map(labName => getPJRForDate(labName, firstDay)).filter(pjr => pjr !== null);
 
     if (pjrListFirstDay.length > 0 || isWorkingDay(firstDay)) {
@@ -378,18 +399,15 @@ function getHolidayReason(date) {
 }
 
 // --- FUNGSI NAVIGASI ---
-
 function goToPreviousDay() {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const currentViewNormalized = new Date(currentViewDate);
     currentViewNormalized.setHours(0, 0, 0, 0);
 
-    // Batas mundur: Tidak boleh lebih kecil dari "hari ini"
     if (currentViewNormalized.getTime() <= today.getTime()) {
-        showPrevLimitModal(); // Tampilkan modal error "sudah lewat"
+        showPrevLimitModal();
     } else {
-        // Jika masih di masa depan, biarkan mundur
         currentViewDate.setDate(currentViewDate.getDate() - 1);
         updateScheduleDisplay();
     }
@@ -399,8 +417,6 @@ function goToNextDay() {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const limitDate = new Date(today);
-
-    // Batas maju: 7 hari dari hari ini
     limitDate.setDate(limitDate.getDate() + 7);
 
     const nextDay = new Date(currentViewDate);
@@ -421,8 +437,8 @@ function goToToday() {
     updateScheduleDisplay();
 }
 
-// --- FUNGSI MODAL ---
 
+// --- FUNGSI MODAL ---
 function showModal(modalId) {
     const modal = document.getElementById(modalId);
     if (!modal) return;
@@ -468,39 +484,26 @@ function hideSearchModal() {
     document.getElementById('search-input').focus();
 }
 
-/**
- * Menampilkan jadwal mata kuliah di modal.
- * Menerapkan logika PRIORITAS.
- */
 function showCourseSchedule(labName, isoDate) {
     const date = new Date(isoDate);
     const namaHari = NAMA_HARI[date.getDay()].toLowerCase();
     const dateStr = getLocalDateString(date);
-
-    // Cek apakah hari ini hari kerja untuk logika tampilan PJR Spesial
     const isTodayAWorkingDay = isWorkingDay(date);
-
     const scheduleGroup = schedulesByDayAndRoom[namaHari]?.[labName.trim()];
 
     let jadwalTersaring = [];
     if (scheduleGroup) {
-        // Logika Prioritas:
-        // Cek dulu apakah ada jadwal Prioritas TANGGAL HARI INI
         const todayPriorities = scheduleGroup.priority.filter(item => item.TANGGAL === dateStr);
-
         if (todayPriorities.length > 0) {
             jadwalTersaring = todayPriorities;
         } else {
-            // Jika tidak ada prioritas TANGGAL HARI INI, ambil jadwal Reguler HARI INI
             jadwalTersaring = scheduleGroup.regular;
         }
     }
 
-    // Urutkan berdasarkan jam mulai sebelum ditampilkan
     if (jadwalTersaring.length > 0) {
         jadwalTersaring.sort((a, b) => formatJam(a.JAM_MULAI).localeCompare(formatJam(b.JAM_MULAI)));
     }
-
 
     const titleEl = document.getElementById('modal-lab-title');
     const dateEl = document.getElementById('modal-lab-date');
@@ -516,14 +519,11 @@ function showCourseSchedule(labName, isoDate) {
             const priorityBadge = isPriority ?
                 `<span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-red-100 text-red-800 ml-2">PRIORITAS</span>` : '';
 
-            // Logika Tampilan PJR Spesial
             let pjrSpecialInfo = '';
             if (isPriority && item.PJR_SPECIAL) {
                 if (isTodayAWorkingDay) {
-                    // Jika hari kerja, PJR Spesial diabaikan
                     pjrSpecialInfo = `<p class="text-xs text-gray-500 font-medium mt-1">PJR: (Mengikuti Rotasi Reguler)</p>`;
                 } else {
-                    // Jika hari libur, PJR Spesial ditampilkan
                     pjrSpecialInfo = `<p class="text-xs text-red-500 font-medium mt-1">PJR: ${item.PJR_SPECIAL}</p>`;
                 }
             }
@@ -551,7 +551,6 @@ function showCourseSchedule(labName, isoDate) {
     showCourseModal();
 }
 
-// Fungsi ini HANYA me-render hasil, tidak lebih
 function displaySearchResults(results) {
     const contentEl = document.getElementById('search-modal-content');
 
@@ -567,7 +566,7 @@ function displaySearchResults(results) {
 
     const groupedResults = {};
     results.forEach(item => {
-        const key = item.HARI || item.TANGGAL; // Gunakan HARI atau TANGGAL sebagai kunci
+        const key = item.HARI || item.TANGGAL;
         const hari = item.HARI ? item.HARI.toUpperCase() : formatDate(new Date(item.TANGGAL));
 
         if (!groupedResults[hari]) {
@@ -578,15 +577,13 @@ function displaySearchResults(results) {
 
     let contentHTML = '<div class="space-y-6">';
 
-    // Sorting: Hari Reguler (Senin-Jumat/Sabtu) dulu, baru Tanggal Prioritas
     const sortedDays = Object.keys(groupedResults).sort((a, b) => {
-        const aIsDate = a.includes(','); // Cek format Tanggal
+        const aIsDate = a.includes(',');
         const bIsDate = b.includes(',');
 
         if (aIsDate && !bIsDate) return 1;
         if (!aIsDate && bIsDate) return -1;
 
-        // Urutkan berdasarkan hari (Senin, Selasa, dst)
         return NAMA_HARI.indexOf(a.split(',')[0]) - NAMA_HARI.indexOf(b.split(',')[0]);
     });
 
@@ -617,7 +614,6 @@ function displaySearchResults(results) {
     contentEl.innerHTML = contentHTML;
 }
 
-// Fungsi ini menangani logika pencarian
 function handleSearch(query) {
     const normalizedQuery = query.toLowerCase().trim();
 
@@ -626,7 +622,6 @@ function handleSearch(query) {
         return;
     }
 
-    // Gabungkan kedua sumber data untuk pencarian
     const fullSchedule = [...courseScheduleRegular, ...courseSchedulePrioritas];
 
     const results = fullSchedule.filter(item => {
@@ -639,21 +634,16 @@ function handleSearch(query) {
     showSearchModal();
 }
 
-// Fungsi ini menyinkronkan kedua input
 function syncSearchInputs(event) {
     const query = event.target.value;
 
-    // Update input yang *lain*
     if (event.target.id === 'search-input') {
         document.getElementById('search-modal-query-input').value = query;
     } else {
         document.getElementById('search-input').value = query;
     }
-
-    // Jalankan pencarian
     handleSearch(query);
 }
-// === AKHIR LOGIKA PENCARIAN ===
 
 
 // --- INISIALISASI APLIKASI ---
@@ -697,9 +687,6 @@ document.addEventListener('DOMContentLoaded', async function() {
 
         // 2. Proses Jadwal Prioritas (Berdasarkan TANGGAL)
         courseSchedulePrioritas.forEach(item => {
-            // Perlu penyesuaian: 'TANGGAL' mungkin memiliki format yang berbeda atau perlu parsing
-            // Asumsikan TANGGAL adalah string YYYY-MM-DD
-            // Kita perlu menangani zona waktu agar 'new Date()' tidak salah hari
             const dateParts = item.TANGGAL.split('-');
             const date = new Date(dateParts[0], dateParts[1] - 1, dateParts[2]);
 
@@ -712,7 +699,6 @@ document.addEventListener('DOMContentLoaded', async function() {
             if (!schedulesByDayAndRoom[hari][ruang]) {
                 schedulesByDayAndRoom[hari][ruang] = { priority: [], regular: [] };
             }
-            // Jadwal Prioritas berbasis tanggal masuk ke 'priority'
             schedulesByDayAndRoom[hari][ruang].priority.push(item);
         });
 
@@ -753,7 +739,6 @@ document.addEventListener('DOMContentLoaded', async function() {
         document.getElementById('search-input').addEventListener('input', syncSearchInputs);
         document.getElementById('search-modal-query-input').addEventListener('input', syncSearchInputs);
 
-        // Listener untuk menutup modal saat input utama dikosongkan
         document.getElementById('search-input').addEventListener('search', (e) => {
             if (e.target.value === '') {
                 hideSearchModal();
