@@ -237,6 +237,7 @@ function createScheduleCard(labName, pjrName, isToday = false, date) {
         displayJabatan = 'Staf';
     }
 
+    // INI ADALAH PENYEBAB MASALAHNYA (onclick mencari fungsi global)
     const clickEvent = pjrName ? `showCourseSchedule('${labName}', '${date.toISOString()}')` : `event.stopPropagation()`;
 
     return `
@@ -550,6 +551,11 @@ function showCourseSchedule(labName, isoDate) {
     }
     showCourseModal();
 }
+
+// === PERBAIKAN 1 BARIS (TAMBAHKAN INI) ===
+// Ini membuat fungsi showCourseSchedule bisa diakses oleh HTML onclick
+window.showCourseSchedule = showCourseSchedule;
+// =========================================
 
 function displaySearchResults(results) {
     const contentEl = document.getElementById('search-modal-content');
