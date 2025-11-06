@@ -1,5 +1,5 @@
-// PERUBAHAN TUNGGAL ADA DI BARIS INI (v10 menjadi v11)
-const CACHE_NAME = 'jadwal-pjr-cache-v11';
+// PERUBAHAN TUNGGAL ADA DI BARIS INI (v11 menjadi v12)
+const CACHE_NAME = 'jadwal-pjr-cache-v12';
 // Daftar file inti yang akan disimpan
 const CORE_FILES = [
   '.',
@@ -16,7 +16,7 @@ const CORE_FILES = [
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      console.log('Service Worker: Caching core files (v11)...');
+      console.log('Service Worker: Caching core files (v12)...');
       return cache.addAll(CORE_FILES);
     })
   );
@@ -49,30 +49,29 @@ self.addEventListener('fetch', (event) => {
   if (requestUrl.pathname.endsWith('data.json')) {
     event.respondWith(
       caches.open(CACHE_NAME).then((cache) => {
-
-        // === PERUBAHAN DI SINI ===
-        // Kita tambahkan { cache: 'no-store' } untuk MEMAKSA browser
-        // agar tidak mengambil data.json dari cache HTTP (cache internal browser).
         return fetch(event.request, { cache: 'no-store' })
           .then((networkResponse) => {
-            // Berhasil dapat data baru, simpan ke cache PWA
             console.log('Service Worker: Mengambil data.json baru dari network.');
             cache.put(event.request, networkResponse.clone());
             return networkResponse;
           })
           .catch(() => {
-            // Gagal ambil data (offline), baru ambil dari cache PWA
             console.log('Service Worker: Gagal ambil data.json dari network, ambil dari cache.');
             return cache.match(event.request);
           });
-        // === AKHIR PERUBAHAN ===
       })
     );
     return;
   }
 
-  // Strategi 2: Untuk semua file lain (Cache First, then Network)
-  // Ambil dari cache dulu untuk kecepatan. Jika tidak ada, ambil dari network.
+  // Strategi 2: (BARU) Untuk counter.php (Network Only, JANGAN DI-CACHE)
+  if (requestUrl.pathname.endsWith('counter.php')) {
+    // Langsung ambil dari network, jangan simpan ke cache
+    event.respondWith(fetch(event.request, { cache: 'no-store' }));
+    return;
+  }
+
+  // Strategi 3: Untuk semua file lain (Cache First, then Network)
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       if (cachedResponse) {

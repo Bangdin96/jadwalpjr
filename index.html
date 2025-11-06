@@ -32,6 +32,11 @@
           <img src="image.png" alt="Logo UPA TIK" class="w-12 h-12 md:w-16 md:h-16 object-contain" onerror="this.style.display='none';">
           </div>
         <p class="text-gray-600 dark:text-gray-400 mobile-subtitle"><strong>Sistem Informasi Jadwal PJR</strong></p>
+
+        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+          Total Kunjungan: <span id="total-visits" class="font-bold">...</span> |
+          Hari Ini: <span id="today-visits" class="font-bold">...</span>
+        </p>
         </div>
 
       <button id="dark-mode-toggle" class="absolute top-4 right-4 p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none">
@@ -157,7 +162,7 @@
             <svg class="w-12 h-12 text-red-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path></svg>
             <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">Batas Tampilan Jadwal</h3>
             <p class="text-sm text-gray-600 dark:text-gray-400">Anda hanya diizinkan melihat jadwal 7 hari ke depan.</p>
-            </div>
+        </div>
         <div class="p-4 bg-gray-50 dark:bg-gray-900 border-t dark:border-gray-700 flex justify-center rounded-b-xl">
             <button id="limit-modal-close-btn" class="px-6 py-2 bg-red-700 text-white font-medium rounded-lg hover:bg-red-800 transition-colors shadow-md">
                 Saya Mengerti

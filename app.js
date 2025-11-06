@@ -65,6 +65,32 @@ function createTagHTML(appString) {
     return html;
 }
 
+// --- FUNGSI STATISTIK PENGUNJUNG ---
+async function fetchVisitorStats() {
+    try {
+        // 'no-store' penting agar tidak di-cache oleh browser
+        const response = await fetch('counter.php', { cache: 'no-store' });
+        if (!response.ok) throw new Error('Network response was not ok');
+
+        const stats = await response.json();
+
+        // Update HTML
+        const totalEl = document.getElementById('total-visits');
+        const todayEl = document.getElementById('today-visits');
+
+        if (totalEl) totalEl.textContent = stats.total.toLocaleString('id-ID');
+        if (todayEl) todayEl.textContent = stats.today.toLocaleString('id-ID');
+
+    } catch (error) {
+        // Jika offline, sembunyikan statistik
+        console.warn('Gagal memuat statistik (mungkin offline):', error);
+        const totalEl = document.getElementById('total-visits');
+        const todayEl = document.getElementById('today-visits');
+        if (totalEl) totalEl.textContent = 'N/A';
+        if (todayEl) todayEl.textContent = 'N/A';
+    }
+}
+
 
 // --- FUNGSI LOGIKA TANGGAL ---
 
@@ -126,7 +152,10 @@ function getPJRForDate(labName, date) {
     const namaHari = NAMA_HARI[date.getDay()];
     const namaHariLower = namaHari.toLowerCase();
 
-    // 1. Cek Jadwal Prioritas berbasis TANGGAL dengan PJR Spesial (PRIORITAS TERTINGGI)
+    // Cek dulu apakah hari ini hari kerja atau hari libur
+    const isTodayAWorkingDay = isWorkingDay(date);
+
+    // 1. Cek Jadwal Prioritas berbasis TANGGAL
     const scheduleGroup = schedulesByDayAndRoom[namaHariLower]?.[labName.trim()];
 
     if (scheduleGroup && scheduleGroup.priority.length > 0) {
@@ -137,8 +166,9 @@ function getPJRForDate(labName, date) {
             // Cek apakah ada PJR_SPECIAL yang ditunjuk
             const priorityPJR = validPriorities.find(item => item.PJR_SPECIAL && item.PJR_SPECIAL.trim() !== '');
 
-            if (priorityPJR) {
-                // PJR Spesial mengambil alih
+            // HANYA gunakan PJR Spesial JIKA HARI INI BUKAN HARI KERJA (Sabtu/Minggu/Libur)
+            if (priorityPJR && !isTodayAWorkingDay) {
+                // PJR Spesial mengambil alih karena ini hari libur
                 return priorityPJR.PJR_SPECIAL;
             }
         }
@@ -153,7 +183,7 @@ function getPJRForDate(labName, date) {
     }
 
     // 3. Rotasi Harian Normal (Hanya jika Hari Kerja)
-    if (isWorkingDay(date)) {
+    if (isTodayAWorkingDay) { // Menggunakan variabel yang sudah disimpan
         const pjrList = labData[labName];
         const pjrCount = pjrList.length;
         const workingDaySeq = getWorkingDaySequence(date);
@@ -161,7 +191,7 @@ function getPJRForDate(labName, date) {
         return pjrList[pjrIndex];
     }
 
-    // 4. Jika Libur (Weekend/Holiday) dan tidak ada Prioritas Spesial
+    // 4. Jika Libur (Weekend/Holiday) dan tidak ada Prioritas Spesial yang berlaku
     return null; // Libur, tidak ada PJR
 }
 
@@ -355,9 +385,7 @@ function goToPreviousDay() {
     const currentViewNormalized = new Date(currentViewDate);
     currentViewNormalized.setHours(0, 0, 0, 0);
 
-    // === PERUBAHAN DI SINI (BATAS MUNDUR) ===
-    // Jika tanggal yang sedang dilihat (currentView) sudah sama dengan atau lebih kecil dari hari ini,
-    // maka jangan biarkan mundur lagi.
+    // Batas mundur: Tidak boleh lebih kecil dari "hari ini"
     if (currentViewNormalized.getTime() <= today.getTime()) {
         showPrevLimitModal(); // Tampilkan modal error "sudah lewat"
     } else {
@@ -365,7 +393,6 @@ function goToPreviousDay() {
         currentViewDate.setDate(currentViewDate.getDate() - 1);
         updateScheduleDisplay();
     }
-    // ===================================
 }
 
 function goToNextDay() {
@@ -373,9 +400,8 @@ function goToNextDay() {
     today.setHours(0, 0, 0, 0);
     const limitDate = new Date(today);
 
-    // === PERUBAHAN DI SINI (BATAS MAJU) ===
-    limitDate.setDate(limitDate.getDate() + 7); // Batas 7 hari dari hari ini
-    // ===================================
+    // Batas maju: 7 hari dari hari ini
+    limitDate.setDate(limitDate.getDate() + 7);
 
     const nextDay = new Date(currentViewDate);
     nextDay.setDate(nextDay.getDate() + 1);
@@ -451,6 +477,9 @@ function showCourseSchedule(labName, isoDate) {
     const namaHari = NAMA_HARI[date.getDay()].toLowerCase();
     const dateStr = getLocalDateString(date);
 
+    // Cek apakah hari ini hari kerja untuk logika tampilan PJR Spesial
+    const isTodayAWorkingDay = isWorkingDay(date);
+
     const scheduleGroup = schedulesByDayAndRoom[namaHari]?.[labName.trim()];
 
     let jadwalTersaring = [];
@@ -486,9 +515,18 @@ function showCourseSchedule(labName, isoDate) {
             const isPriority = item.IS_PRIORITY === 'Y';
             const priorityBadge = isPriority ?
                 `<span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-red-100 text-red-800 ml-2">PRIORITAS</span>` : '';
-            const pjrSpecialInfo = (isPriority && item.PJR_SPECIAL) ?
-                `<p class="text-xs text-red-500 font-medium mt-1">PJR: ${item.PJR_SPECIAL}</p>` : '';
 
+            // Logika Tampilan PJR Spesial
+            let pjrSpecialInfo = '';
+            if (isPriority && item.PJR_SPECIAL) {
+                if (isTodayAWorkingDay) {
+                    // Jika hari kerja, PJR Spesial diabaikan
+                    pjrSpecialInfo = `<p class="text-xs text-gray-500 font-medium mt-1">PJR: (Mengikuti Rotasi Reguler)</p>`;
+                } else {
+                    // Jika hari libur, PJR Spesial ditampilkan
+                    pjrSpecialInfo = `<p class="text-xs text-red-500 font-medium mt-1">PJR: ${item.PJR_SPECIAL}</p>`;
+                }
+            }
 
             contentHTML += `
                 <div class="p-4 bg-gray-50 dark:bg-gray-900 rounded-lg border ${isPriority ? 'border-red-500 shadow-md' : 'dark:border-gray-700'}">
@@ -622,6 +660,10 @@ function syncSearchInputs(event) {
 
 document.addEventListener('DOMContentLoaded', async function() {
     try {
+        // === PANGGIL FUNGSI STATISTIK DI SINI ===
+        fetchVisitorStats();
+        // ======================================
+
         const response = await fetch('data.json');
 
         if (!response.ok) {
@@ -655,7 +697,12 @@ document.addEventListener('DOMContentLoaded', async function() {
 
         // 2. Proses Jadwal Prioritas (Berdasarkan TANGGAL)
         courseSchedulePrioritas.forEach(item => {
-            const date = new Date(item.TANGGAL);
+            // Perlu penyesuaian: 'TANGGAL' mungkin memiliki format yang berbeda atau perlu parsing
+            // Asumsikan TANGGAL adalah string YYYY-MM-DD
+            // Kita perlu menangani zona waktu agar 'new Date()' tidak salah hari
+            const dateParts = item.TANGGAL.split('-');
+            const date = new Date(dateParts[0], dateParts[1] - 1, dateParts[2]);
+
             const hari = NAMA_HARI[date.getDay()].toLowerCase();
             const ruang = item.RUANG ? item.RUANG.trim() : '';
 
