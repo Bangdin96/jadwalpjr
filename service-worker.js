@@ -1,5 +1,5 @@
-// PERUBAHAN TUNGGAL ADA DI BARIS INI (v9 menjadi v10)
-const CACHE_NAME = 'jadwal-pjr-cache-v10';
+// PERUBAHAN TUNGGAL ADA DI BARIS INI (v10 menjadi v11)
+const CACHE_NAME = 'jadwal-pjr-cache-v11';
 // Daftar file inti yang akan disimpan
 const CORE_FILES = [
   '.',
@@ -16,7 +16,7 @@ const CORE_FILES = [
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      console.log('Service Worker: Caching core files (v10)...');
+      console.log('Service Worker: Caching core files (v11)...');
       return cache.addAll(CORE_FILES);
     })
   );
@@ -45,22 +45,27 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const requestUrl = new URL(event.request.url);
 
-  // Strategi 1: Untuk data.json (Network First, then Cache)
-  // Selalu coba ambil data terbaru. Jika gagal (offline), ambil dari cache.
+  // Strategi 1: Untuk data.json (Network First, then Cache, TAPI DIPAKSA)
   if (requestUrl.pathname.endsWith('data.json')) {
     event.respondWith(
       caches.open(CACHE_NAME).then((cache) => {
-        return fetch(event.request)
+
+        // === PERUBAHAN DI SINI ===
+        // Kita tambahkan { cache: 'no-store' } untuk MEMAKSA browser
+        // agar tidak mengambil data.json dari cache HTTP (cache internal browser).
+        return fetch(event.request, { cache: 'no-store' })
           .then((networkResponse) => {
-            // Berhasil dapat data baru, simpan ke cache
+            // Berhasil dapat data baru, simpan ke cache PWA
+            console.log('Service Worker: Mengambil data.json baru dari network.');
             cache.put(event.request, networkResponse.clone());
             return networkResponse;
           })
           .catch(() => {
-            // Gagal ambil data (offline), ambil dari cache
+            // Gagal ambil data (offline), baru ambil dari cache PWA
             console.log('Service Worker: Gagal ambil data.json dari network, ambil dari cache.');
             return cache.match(event.request);
           });
+        // === AKHIR PERUBAHAN ===
       })
     );
     return;
